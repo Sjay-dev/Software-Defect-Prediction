@@ -7,3 +7,16 @@ data/raw/*.csv
 data/raw/*.part
 artifacts/
 
+
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.env
+.env.*
+!.env.example
+data/
+artifacts/
+*.joblib
+*.pkl

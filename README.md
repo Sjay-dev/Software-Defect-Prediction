@@ -87,6 +87,20 @@ are training data. It writes `artifacts/lopo/lopo_results.json`,
 `artifacts/lopo/review.md`. It also checks SHA-256
 hashes before and after the run and stops if anything in `artifacts/baseline/` changes.
 
+## Source-validation threshold experiment
+
+To investigate the low recall of the fixed 0.5 cutoff without looking at target labels,
+run:
+
+```powershell
+python -m defect_prediction.source_validation
+```
+
+For each outer target project, this excludes all of its releases and performs six inner
+leave-one-project-out source-validation fits. It selects from the fixed grid 0.05 through
+0.95 by mean per-project F1, then refits on all six source projects. Results go to
+`artifacts/source_validation/`. Existing baseline and LOPO files are hash-protected.
+
 ## Reproduce with explicit paths
 
 The defaults above are usually simplest. Their full equivalents are:
