@@ -1,0 +1,82 @@
+{
+  "dataset_name": "Jureczko software defect prediction corpus (SeaCraft/PROMISE)",
+  "creator": "Marian Jureckzo (spelling in the Zenodo record metadata)",
+  "license": "CC-BY-4.0",
+  "citation_doi": "10.1145/1868328.1868342",
+  "records": [
+    {
+      "project": "camel",
+      "zenodo_record": 268442,
+      "record_url": "https://zenodo.org/records/268442",
+      "files": {
+        "camel-1.0.csv": "b28f4ad7f337c406191d479b989febe3",
+        "camel-1.2.csv": "e4643f909d161198c8dbbcfe27c8f4de",
+        "camel-1.4.csv": "c1517511d8d1e8ff94dd144bb93ee94d",
+        "camel-1.6.csv": "5741dcefbc7a9cf9550f29f7040cbfb2"
+      }
+    },
+    {
+      "project": "jedit",
+      "zenodo_record": 268458,
+      "record_url": "https://zenodo.org/records/268458",
+      "files": {
+        "jedit-3.2.csv": "508ea13bcfd3d556a7b88d61da40abb0",
+        "jedit-4.0.csv": "c55ca83778cc61dfdafbde1293c2221e",
+        "jedit-4.1.csv": "0b8307cc6452b1a67967c025fd73e46f",
+        "jedit-4.2.csv": "3884e4673ffb3a3044ddc609eca30eb2",
+        "jedit-4.3.csv": "a4d059d56f7d4de1339fd83ad9f29dc2"
+      }
+    },
+    {
+      "project": "log4j",
+      "zenodo_record": 268451,
+      "record_url": "https://zenodo.org/records/268451",
+      "files": {
+        "log4j-1.0.csv": "e590cb35e449bcb9595e1d7400d0e12c",
+        "log4j-1.1.csv": "60960c968896dc49f6b1ec326fa2288a",
+        "log4j-1.2.csv": "7c2042fb747da1d33d033e70028daa1d"
+      }
+    },
+    {
+      "project": "lucene",
+      "zenodo_record": 322458,
+      "record_url": "https://zenodo.org/records/322458",
+      "files": {
+        "lucene-2.0.csv": "8bf13c7d1692d931bee6fc75364083ff",
+        "lucene-2.2.csv": "2db3164a16d50ef88ae2a86e3d73d1a9",
+        "lucene-2.4.csv": "0df9011677c514041117b0a5c4d17564"
+      }
+    },
+    {
+      "project": "poi",
+      "zenodo_record": 322443,
+      "record_url": "https://zenodo.org/records/322443",
+      "files": {
+        "poi-1.5.csv": "f564e4fbc19a7382b3aa73a700b96aec",
+        "poi-2.0.csv": "d73ba43367c041cc5cf58eaf9a0b7a06",
+        "poi-2.5.csv": "3ec2b305ba4acf6dc288743c06ce3391",
+        "poi-3.0.csv": "2a762499e4e13193c25cfde72f5ad6e6"
+      }
+    },
+    {
+      "project": "synapse",
+      "zenodo_record": 322449,
+      "record_url": "https://zenodo.org/records/322449",
+      "files": {
+        "synapse-1.0.csv": "f0d89fc79c1218c57060bd916b54c42d",
+        "synapse-1.1.csv": "5f6bb697e41f9423c61486f267908a2c",
+        "synapse-1.2.csv": "79032732e3e6474c20e0204d780b8fbd"
+      }
+    },
+    {
+      "project": "velocity",
+      "zenodo_record": 322455,
+      "record_url": "https://zenodo.org/records/322455",
+      "files": {
+        "velocity-1.4.csv": "d8884b9581c219c73a8c707dcc48a46f",
+        "velocity-1.5.csv": "e5cd7e27641f3666cf5e4feeb8d5fdb5",
+        "velocity-1.6.csv": "3b7ef3dfe7c689b0d5959294d9c6d3ed"
+      }
+    }
+  ]
+}

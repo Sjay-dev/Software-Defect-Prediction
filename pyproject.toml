@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "software-defect-prediction"
+version = "0.1.0"
+description = "A reproducible cross-project software defect prediction baseline"
+readme = "README.md"
+requires-python = ">=3.12,<3.15"
+dependencies = [
+  "joblib==1.6.0",
+  "pandas==3.1.1",
+  "scikit-learn==1.9.1",
+]
+
+[project.optional-dependencies]
+dev = ["pytest==9.2.0"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+testpaths = ["tests"]
+

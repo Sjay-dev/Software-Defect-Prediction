@@ -1,0 +1,9 @@
+{
+  "experiment_name": "jureczko_cross_project_baseline",
+  "held_out_project": "jedit",
+  "random_state": 42,
+  "decision_threshold": 0.5,
+  "label_rule": "defective = 1 when bug_count > 0, otherwise 0",
+  "tuning": "none"
+}
+
