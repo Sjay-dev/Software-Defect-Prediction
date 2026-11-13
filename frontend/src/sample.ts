@@ -1,0 +1,25 @@
+import type { MetricRecord } from './types'
+
+export const SAMPLE_RECORD: MetricRecord = {
+  record_id: 'sample:org.example.ClassA',
+  wmc: 4,
+  dit: 2,
+  noc: 0,
+  cbo: 6,
+  rfc: 8,
+  lcom: 6,
+  ca: 2,
+  ce: 5,
+  npm: 4,
+  lcom3: 2,
+  loc: 26,
+  dam: 0,
+  moa: 0,
+  mfa: 0.896551724,
+  cam: 0.5,
+  ic: 0,
+  cbm: 0,
+  amc: 5.5,
+  max_cc: 1,
+  avg_cc: 0.75,
+}

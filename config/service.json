@@ -1,0 +1,14 @@
+{
+  "cors_origins": [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173"
+  ],
+  "expected_model_sha256": "4d70c015584d9bcc5a781b6d712f6db5f08784838b00de37eb0124fef3d3f40d",
+  "expected_model_version": "logistic-regression-jedit-holdout-v1",
+  "historical_reports": {
+    "lopo_results": "../artifacts/lopo/lopo_results.json",
+    "source_validation_results": "../artifacts/source_validation/source_validation_results.json"
+  },
+  "max_batch_size": 100,
+  "model_manifest": "../artifacts/deployment/logistic-regression-jedit-holdout-v1/model_manifest.json"
+}

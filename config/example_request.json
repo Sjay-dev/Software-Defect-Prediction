@@ -1,0 +1,27 @@
+{
+  "records": [
+    {
+      "record_id": "camel-1.0:org.example.ClassA",
+      "wmc": 4.0,
+      "dit": 2.0,
+      "noc": 0.0,
+      "cbo": 6.0,
+      "rfc": 8.0,
+      "lcom": 6.0,
+      "ca": 2.0,
+      "ce": 5.0,
+      "npm": 4.0,
+      "lcom3": 2.0,
+      "loc": 26.0,
+      "dam": 0.0,
+      "moa": 0.0,
+      "mfa": 0.896551724,
+      "cam": 0.5,
+      "ic": 0.0,
+      "cbm": 0.0,
+      "amc": 5.5,
+      "max_cc": 1.0,
+      "avg_cc": 0.75
+    }
+  ]
+}

@@ -1,7 +1,9 @@
 # Exact direct dependencies for this milestone. Install with:
 # python -m pip install -r requirements.txt
+fastapi==0.162.5
+httpx==0.28.1
 joblib==1.6.0
 pandas==3.1.1
 scikit-learn==1.9.1
 pytest==9.2.0
-
+uvicorn==0.54.0
