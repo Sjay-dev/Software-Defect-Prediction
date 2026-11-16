@@ -22,6 +22,7 @@ export type MetricRecord = {
 
 export type Prediction = {
   record_id: string
+  class_name?: string
   model_score: number
   rank: number
   model_version: string
