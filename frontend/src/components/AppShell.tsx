@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import type { ReactNode } from 'react'
 import type { Health, Loadable } from '../types'
+import { Footer } from './Footer'
 
 export type Screen = 'prediction' | 'experiments' | 'model'
 
@@ -83,7 +84,7 @@ export function AppShell({
         </div>
       </aside>
 
-      <main className="min-w-0">
+      <main className="flex min-h-screen min-w-0 flex-col">
         <header className="flex h-16 items-center justify-between border-b border-slate-200/80 bg-white/80 px-5 backdrop-blur lg:px-9">
           <div className="flex items-center gap-2 text-sm text-slate-500">
             <PanelLeft size={16} />
@@ -91,7 +92,8 @@ export function AppShell({
           </div>
           <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">Local research dashboard</span>
         </header>
-        <div className="mx-auto max-w-[1480px] p-5 sm:p-7 lg:p-9">{children}</div>
+        <div className="mx-auto w-full max-w-[1480px] flex-1 p-5 sm:p-7 lg:p-9">{children}</div>
+        <Footer />
       </main>
     </div>
   )
