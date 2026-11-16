@@ -97,4 +97,32 @@ describe('batched predictions', () => {
       }
     })).rejects.toThrow('Batch 2 of 3 failed after 2 of 5 records were scored')
   })
+
+  it('retries a failed batch without changing the model version or global ranking', async () => {
+    let attempts = 0
+    const result = await predictInBatches(records(2), 2, 'v1', async (batch) => {
+      attempts += 1
+      if (attempts === 1) throw new Error('temporary outage')
+      return {
+        score_description: 'score',
+        predictions: batch.map((record, index) => ({ record_id: record.record_id, model_score: 1 - index, rank: index + 1, model_version: 'v1' })),
+      }
+    }, undefined, { maxRetries: 1, retryDelayMs: 0 })
+    expect(attempts).toBe(2)
+    expect(result.predictions.map((prediction) => prediction.rank)).toEqual([1, 2])
+  })
+
+  it('cancels between bounded batches and returns no partial result', async () => {
+    const controller = new AbortController()
+    let calls = 0
+    await expect(predictInBatches(records(3), 1, 'v1', async (batch) => {
+      calls += 1
+      if (calls === 1) controller.abort()
+      return {
+        score_description: 'score',
+        predictions: batch.map((record) => ({ record_id: record.record_id, model_score: 0.5, rank: 1, model_version: 'v1' })),
+      }
+    }, undefined, { signal: controller.signal })).rejects.toThrow('cancelled after 1 of 3 records')
+    expect(calls).toBe(1)
+  })
 })

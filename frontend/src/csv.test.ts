@@ -1,10 +1,14 @@
 import { readFileSync } from 'node:fs'
+import ExcelJS from 'exceljs'
 import { describe, expect, it } from 'vitest'
 import {
   MAX_CSV_ROWS,
   parseMetricCsv,
   predictionsCsv,
+  templateArff,
   templateCsv,
+  templateJson,
+  templateXlsx,
   validateCsvFileSize,
 } from './csv'
 
@@ -125,5 +129,16 @@ describe('metric CSV handling', () => {
     expect(predictionsCsv([{ record_id: 'a,b', model_score: 0.7, rank: 1, model_version: 'v1' }])).toContain('"a,b",0.7,1,v1')
     expect(predictionsCsv([{ record_id: 'a', class_name: 'org.example.A', model_score: 0.7, rank: 1, model_version: 'v1' }]))
       .toContain('record_id,class_name,model_score,rank,model_version')
+    expect(predictionsCsv([{ record_id: 'a', source_row: 7, labels: { bug: 2 }, model_score: 0.7, rank: 1, model_version: 'v1' }]))
+      .toContain('record_id,source_row,model_score,rank,model_version,outcome_bug')
+  })
+
+  it('generates templates for every supported format', async () => {
+    expect(templateCsv(['wmc'], '\t')).toBe('record_id\twmc\r\n')
+    expect(JSON.parse(templateJson(['wmc']))).toEqual({ record_id: 'example-class', wmc: null })
+    expect(templateArff(['wmc'])).toContain('@attribute wmc numeric')
+    const workbook = new ExcelJS.Workbook()
+    await workbook.xlsx.load(await templateXlsx(['wmc', 'loc']).then((blob) => blob.arrayBuffer()))
+    expect(workbook.getWorksheet('Metrics')?.getRow(1).values).toEqual([undefined, 'record_id', 'wmc', 'loc'])
   })
 })

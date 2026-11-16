@@ -4,7 +4,7 @@ import type { ModelInfo } from '../types'
 const limitations = [
   'Scores are relative model risk scores, not calibrated or verified defect probabilities.',
   'The model was evaluated across seven historical Java projects; transfer to a new codebase is not guaranteed.',
-  'Ranks compare records only within the submitted batch and change when the batch changes.',
+  'The API returns request-local ranks; the dashboard recalculates global ranks only after every import batch succeeds.',
   'Only the listed static code metrics are used; identifiers and historical defect labels are excluded.',
 ]
 
@@ -55,7 +55,7 @@ export function ModelScreen({ model }: { model: ModelInfo }) {
       </section>
 
       <section className="card p-6 sm:p-7">
-        <div className="flex items-center gap-3"><Boxes className="text-teal-700" size={20} /><div><h2 className="section-title">Required feature schema</h2><p className="mt-1 text-sm text-slate-500">CSV column names must match these backend feature names exactly.</p></div></div>
+        <div className="flex items-center gap-3"><Boxes className="text-teal-700" size={20} /><div><h2 className="section-title">Required feature schema</h2><p className="mt-1 text-sm text-slate-500">Imports must explicitly supply these exact metric definitions; unfamiliar column names require user mapping.</p></div></div>
         <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-5">{model.features.map((feature, index) => <div key={feature} className="rounded-xl border border-slate-200 bg-slate-50 p-3"><span className="text-[10px] font-semibold text-slate-400">{String(index + 1).padStart(2, '0')}</span><p className="mt-1 font-mono text-sm font-semibold text-slate-800">{feature}</p></div>)}</div>
       </section>
 

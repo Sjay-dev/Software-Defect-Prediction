@@ -81,6 +81,9 @@ def _record(row, identifier: str = "record-1") -> dict:
 
 def test_api_loads_model_and_reports_exact_provenance(tmp_path, sample_data):
     config, _, _, _ = _deployment(tmp_path, sample_data)
+    expected_hash = json.loads(config.read_text(encoding="utf-8"))[
+        "expected_model_sha256"
+    ]
 
     with TestClient(create_app(config)) as client:
         health = client.get("/health")
@@ -93,6 +96,7 @@ def test_api_loads_model_and_reports_exact_provenance(tmp_path, sample_data):
         "model_version": "test-v1",
     }
     assert info.json()["training_projects"] == ["alpha", "beta"]
+    assert info.json()["model_sha256"] == expected_hash
     assert info.json()["evaluation_only_projects"] == ["heldout"]
     assert info.json()["features"] == list(FEATURE_COLUMNS)
     assert "not a calibrated probability" in info.json()["score_description"]

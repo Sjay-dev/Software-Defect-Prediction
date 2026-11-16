@@ -42,10 +42,11 @@ export const api = {
   health: () => requestJson<Health>('/health'),
   modelInfo: () => requestJson<ModelInfo>('/model-info'),
   experimentResults: () => requestJson<ExperimentResults>('/experiment-results'),
-  predict: (records: MetricRecord[]) =>
+  predict: (records: MetricRecord[], signal?: AbortSignal) =>
     requestJson<PredictionResponse>('/predict', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ records }),
+      signal,
     }),
 }

@@ -6,6 +6,7 @@ export type Health = {
 
 export type ModelInfo = {
   model_version: string
+  model_sha256: string
   model_type: string
   score_description: string
   training_projects: string[]
@@ -13,6 +14,8 @@ export type ModelInfo = {
   features: string[]
   max_batch_size: number
   packaging_method: string
+  decision_threshold?: number | null
+  calibration_status?: string | null
 }
 
 export type MetricRecord = {
@@ -23,6 +26,8 @@ export type MetricRecord = {
 export type Prediction = {
   record_id: string
   class_name?: string
+  source_row?: number
+  labels?: Record<string, string | number | boolean | null>
   model_score: number
   rank: number
   model_version: string

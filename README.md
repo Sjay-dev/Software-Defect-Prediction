@@ -95,6 +95,24 @@ python -m defect_prediction.source_validation
 
 The baseline holds out every JEdit release. LOPO uses each complete project as a target in turn. Source validation chooses thresholds only from inner source-project folds; outer target labels are used only for final metrics.
 
+## Reproduce the model-improvement experiment
+
+The bounded candidate grid and frozen replacement gates are in `config/model_improvement.json`. The runner evaluates tuned regularised logistic regression, random forest, and histogram gradient boosting, alongside the preserved logistic model, constant-prior reference, and lines-of-code ranking reference. Its outer and inner folds both group by complete project, so releases of one project never cross a training/validation boundary. Ant is not loaded by this command.
+
+```powershell
+.\.venv\Scripts\python.exe -m defect_prediction.model_improvement run
+```
+
+The command writes `nested_results.json`, `nested_outer_results.csv`, `development_configuration_results.csv`, and `final_selection.json` under `artifacts/model_improvement`. A validated checkpoint lets an interrupted run resume without repeating completed outer folds. The frozen v1 experiment retained `logistic-regression-jedit-holdout-v1`: the best candidate gained only 0.00608 macro project AP on development data, below the predeclared 0.01 deployment gate. Consequently no candidate artifact was packaged and `config/service.json` was not changed.
+
+Only after the selection files exist, reproduce the explicitly non-final Ant diagnostic:
+
+```powershell
+.\.venv\Scripts\python.exe -m defect_prediction.model_improvement external-ant --ant-csv .\data\external\ant-1.7.csv
+```
+
+The complete executed comparison, per-project results, decision, commands, and limitations are recorded in `artifacts/model_improvement/REPORT.md`. The `package` subcommand refuses to create a candidate artifact when the frozen selection says to retain the baseline.
+
 ## Complete baseline reporting
 
 Generate the additional report without fitting or overwriting any experiment:
@@ -147,7 +165,7 @@ Startup fails if the configured manifest, version, checksum, feature schema, or 
 The routes are:
 
 - `GET /health`: confirms the configured model loaded.
-- `GET /model-info`: returns model version, exact training/evaluation projects, features, score wording, and batch limit.
+- `GET /model-info`: returns model version, verified artifact checksum, exact training/evaluation projects, features, score wording, optional frozen threshold/calibration status, and batch limit.
 - `GET /experiment-results`: serves a curated, read-only view of the saved seven-project LOPO and source-validation reports.
 - `POST /predict`: accepts 1–100 records and returns each identifier, model score, within-batch rank, and model version.
 
@@ -189,7 +207,7 @@ VITE_API_BASE_URL=http://127.0.0.1:8000
 
 The dashboard has three deliberately separate screens:
 
-- **Prediction** validates a CSV locally, sends only valid metric records to `POST /predict`, sorts returned model risk scores, and downloads results as CSV. The template contains `record_id` plus the exact 20 backend features. Blank metric cells are sent as `null` for the saved imputer; non-numeric and infinite values are rejected.
+- **Prediction** safely previews CSV/TSV, JSON, XLSX, and dense ARFF files locally, sends only explicitly mapped valid metric records to `POST /predict`, recalculates global ranks after all bounded batches succeed, and downloads results as CSV. It supports the dashboard `record_id` plus 20-metric schema and the original Jureczko/PROMISE two-`name` layout. Blank metric cells are sent as `null` for the saved imputer; invalid records require explicit valid-rows-only consent.
 - **Experiments** reads only `GET /experiment-results`. It compares dummy and logistic-regression average precision and shows the preserved precision, recall, F1, top-20% recall, and selected-threshold warning. These are historical results, not new predictions.
 - **Model information** reads `GET /model-info` and shows the version, training/evaluation projects, required features, artifact handling, and limitations.
 
@@ -216,10 +234,10 @@ npm --prefix frontend run build
 
 Tests cover research-data guardrails, project isolation, frozen-pipeline persistence, reporting calculations, API input validation, configured model loading/checksums, provenance, bounded batches, and exact agreement between direct pipeline scores and API scores.
 
-Frontend tests cover valid CSV conversion, missing columns, non-numeric metrics, duplicate identifiers, batch limits, and stable template/result exports.
+Frontend tests cover every implemented import format, delimiters, worksheet selection, safe dense ARFF parsing, duplicate headers, explicit mappings, identifiers and labels, invalid/partial rows, format parity, batch retry/cancellation, global ranking, and stable template/result exports.
 
 Launcher tests use controlled temporary listeners and ports to cover backend/frontend conflicts, missing configuration, missing reports, backend startup failure, process cleanup, and immediate restart. They stop only processes created by the tests.
 
 ## Dataset and interpretation
 
-The data source, CC-BY-4.0 license, label construction, metric meanings, and limitations are documented in [docs/DATASET.md](docs/DATASET.md). Results are cross-project research results, not proof that a cutoff will transfer to every codebase. A future deployment model may be trained separately on a declared project set, but evaluation artifacts and outer-test results must remain untouched.
+The data source, CC-BY-4.0 license, label construction, metric meanings, and limitations are documented in [docs/DATASET.md](docs/DATASET.md). Supported prediction-file layouts, validation behavior, limits, and the raw-source-code boundary are documented in [docs/IMPORTING.md](docs/IMPORTING.md). Results are cross-project research results, not proof that a cutoff will transfer to every codebase. A future deployment model may be trained separately on a declared project set, but evaluation artifacts and outer-test results must remain untouched.

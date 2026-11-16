@@ -86,6 +86,7 @@ class Predictor:
     def model_info(self) -> dict[str, Any]:
         return {
             "model_version": self.model_version,
+            "model_sha256": self.manifest["model_sha256"],
             "model_type": self.manifest["model_type"],
             "score_description": self.manifest["score_description"],
             "training_projects": self.manifest["training_projects"],
@@ -93,6 +94,8 @@ class Predictor:
             "features": list(FEATURE_COLUMNS),
             "max_batch_size": self.max_batch_size,
             "packaging_method": self.manifest["packaging_method"],
+            "decision_threshold": self.manifest.get("decision_threshold"),
+            "calibration_status": self.manifest.get("calibration_status"),
         }
 
     def predict(self, records: list[dict[str, Any]]) -> list[dict[str, Any]]:
