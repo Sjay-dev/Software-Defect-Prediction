@@ -1,0 +1,31 @@
+{
+  "experiment_name": "source_project_similarity_selection_lopo_v1",
+  "random_state": 42,
+  "selected_source_count": 3,
+  "decision_threshold": 0.5,
+  "top_fraction": 0.2,
+  "similarity": {
+    "features": "all_original_20_metrics",
+    "imputation": "median_with_keep_empty_features",
+    "scaling": "standard",
+    "project_summary": "per_feature_median_then_interquartile_range",
+    "distance": "euclidean",
+    "tie_break": "distance_ascending_then_project_identifier_ascending"
+  },
+  "prediction_model": {
+    "family": "logistic_regression",
+    "imputation": "median_with_missing_indicators",
+    "scaling": "standard",
+    "C": 1.0,
+    "solver": "lbfgs",
+    "max_iter": 2000,
+    "random_state": 42
+  },
+  "random_subset_reference": {
+    "subset_size": 3,
+    "enumeration": "all_combinations",
+    "expected_combinations_per_target": 20,
+    "aggregation": "arithmetic_mean_within_target",
+    "variation": "sample_standard_deviation_and_range_across_subsets"
+  }
+}

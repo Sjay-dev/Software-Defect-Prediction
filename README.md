@@ -7,7 +7,7 @@ This project trains and evaluates a simple cross-project software-defect model, 
 - `schema.py` defines the exact 20 numeric metrics and their order.
 - `data.py` validates research data, identifiers, labels, and numeric metrics.
 - `modeling.py` builds leakage-safe scikit-learn pipelines. Imputation and scaling are saved inside the pipeline.
-- `experiment.py`, `lopo.py`, and `source_validation.py` are the existing evaluation experiments. They remain separate and reproducible.
+- `experiment.py`, `lopo.py`, `model_comparison.py`, `source_similarity.py`, and `source_validation.py` are separate, reproducible evaluation experiments.
 - `reporting.py` reads frozen source-validation results and adds the missing always-defective baseline, flagged counts, flagged percentages, and a clear separation between classification and ranking results. It does not fit a model.
 - `deployment.py` copies the chosen saved pipeline byte-for-byte into a separate deployment directory and records its checksum and training provenance. It refuses to replace a different artifact.
 - `prediction.py` verifies the explicitly configured checksum, checks the saved feature schema, loads the pipeline once, and contains all scoring/ranking logic.
@@ -94,6 +94,30 @@ python -m defect_prediction.source_validation
 ```
 
 The baseline holds out every JEdit release. LOPO uses each complete project as a target in turn. Source validation chooses thresholds only from inner source-project folds; outer target labels are used only for final metrics.
+
+## Reproduce the fixed model comparison
+
+The predeclared protocol is in `docs/MODEL_COMPARISON_PROTOCOL.md`, and its exact settings are in `config/model_comparison.json`. It compares dummy prior, logistic regression, random forest, and histogram gradient boosting on identical leave-one-project-out folds. Seed 42 is the primary comparison; random forest also runs the predeclared sensitivity seeds 17 and 91. This experiment does not tune a model or threshold from outer-test outcomes and does not alter the separate source-selected-threshold results.
+
+Run the complete comparison from the repository root with this exact PowerShell command:
+
+```powershell
+.\.venv\Scripts\python.exe -m defect_prediction.model_comparison
+```
+
+Outputs are isolated under `artifacts/model_comparison`: `comparison_results.json`, `REPORT.md`, per-project results and logistic-difference CSVs, random-forest seed results and variation CSVs, per-fit runtimes, and all per-record predictions. The JSON records the frozen configuration, dependency versions, raw-dataset SHA-256 checksums, outer-record identity checksums, duplicate audits, and protected-artifact integrity hashes. Existing baseline, deployment, LOPO, source-validation, model-improvement, and reporting artifacts are hash-checked before and after the run.
+
+## Reproduce the source-project similarity experiment
+
+The predeclared protocol is in `docs/SOURCE_SIMILARITY_PROTOCOL.md`, with exact settings in `config/source_similarity.json`. For every outer target, it compares the unchanged logistic-regression pipeline trained on all six sources, the three closest sources by source-scaled median/IQR metric summaries, and every one of the 20 possible three-source subsets. The subset reference is their average, never the best result. Similarity may inspect unlabelled target metrics but never target labels.
+
+Run the complete experiment from the repository root with this exact PowerShell command:
+
+```powershell
+.\.venv\Scripts\python.exe -m defect_prediction.source_similarity
+```
+
+Large complete outputs are kept under the existing ignored `artifacts/source_similarity` directory. Git-visible findings are written separately to `reports/source_similarity`: the research report, per-project summary, selected-source distances, all 140 subset results, and equal-weight summary. The run checks that all-source results exactly reproduce the fixed logistic baseline and that deployment and prior experiment artifacts remain unchanged.
 
 ## Reproduce the model-improvement experiment
 
