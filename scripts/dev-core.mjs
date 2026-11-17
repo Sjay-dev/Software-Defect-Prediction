@@ -121,19 +121,21 @@ export function inspectPrerequisites({ includeBackend = true, includeFrontend = 
 
         const reports = config.historical_reports || {}
         const reportChecks = [
-          ['LOPO report', reports.lopo_results, `${process.platform === 'win32' ? '.\\.venv\\Scripts\\python.exe' : './.venv/bin/python'} -m defect_prediction.lopo`],
-          ['Source-validation report', reports.source_validation_results, `${process.platform === 'win32' ? '.\\.venv\\Scripts\\python.exe' : './.venv/bin/python'} -m defect_prediction.source_validation`],
+          ['Baseline summary', reports.baseline_summary],
+          ['Model-comparison summary', reports.model_comparison_summary],
+          ['Source-similarity summary', reports.source_similarity_summary],
         ]
-        for (const [label, configured, fix] of reportChecks) {
+        const reportFix = `${process.platform === 'win32' ? '.\\.venv\\Scripts\\python.exe' : './.venv/bin/python'} -m defect_prediction.research_reporting`
+        for (const [label, configured] of reportChecks) {
           if (!configured) {
-            results.push(item('warn', label, 'Not configured. Predictions can run, but the experiment page will be unavailable.', fix))
+            results.push(item('warn', label, 'Not configured. Predictions can run; this experiment section will be unavailable.', reportFix))
             continue
           }
           const reportPath = resolveConfiguredPath(configPath, configured)
           results.push(
             existsSync(reportPath)
               ? item('ok', label, reportPath)
-              : item('warn', label, `Missing ${reportPath}. Predictions can run, but the experiment page will be unavailable.`, fix),
+              : item('warn', label, `Missing ${reportPath}. Predictions can run; this experiment section will be unavailable.`, reportFix),
           )
         }
       } catch (error) {

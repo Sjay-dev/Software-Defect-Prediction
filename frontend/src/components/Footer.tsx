@@ -6,7 +6,7 @@ const links = [
   },
   {
     label: 'Methodology',
-    href: 'https://github.com/Sjay-dev/Software-Defect-Prediction#reproduce-the-model-improvement-experiment',
+    href: 'https://github.com/Sjay-dev/Software-Defect-Prediction',
     newTab: false,
   },
   {

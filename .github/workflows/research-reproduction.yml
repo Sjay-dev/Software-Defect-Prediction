@@ -1,0 +1,67 @@
+name: Full research reproduction
+
+on:
+  workflow_dispatch:
+
+jobs:
+  reproduce:
+    runs-on: windows-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Create isolated environment
+        shell: pwsh
+        run: |
+          python -m venv .venv
+          .\.venv\Scripts\python.exe -m pip install -r requirements-lock.txt
+          .\.venv\Scripts\python.exe -m pip install --no-deps -e .
+      - name: Reproduce research and deployment artifacts
+        shell: pwsh
+        run: |
+          .\.venv\Scripts\python.exe -m defect_prediction.download
+          .\.venv\Scripts\python.exe -m defect_prediction.experiment
+          .\.venv\Scripts\python.exe -m defect_prediction.evaluate
+          .\.venv\Scripts\python.exe -m defect_prediction.lopo
+          .\.venv\Scripts\python.exe -m defect_prediction.source_validation
+          .\.venv\Scripts\python.exe -m defect_prediction.model_comparison
+          .\.venv\Scripts\python.exe -m defect_prediction.source_similarity
+          .\.venv\Scripts\python.exe -m defect_prediction.research_reporting --reports-dir artifacts/reproduced_reports
+          .\.venv\Scripts\python.exe -m defect_prediction.deployment
+      - name: Verify tracked research values reproduce
+        shell: pwsh
+        run: |
+          @'
+          import json
+          from pathlib import Path
+
+          def stable(value):
+              if isinstance(value, dict):
+                  return {
+                      key: stable(item)
+                      for key, item in value.items()
+                      if "sha256" not in key and key != "source_artifacts"
+                  }
+              if isinstance(value, list):
+                  return [stable(item) for item in value]
+              return value
+
+          for relative in (
+              "baseline/summary.json",
+              "model_comparison/summary.json",
+              "source_similarity/summary.json",
+          ):
+              expected = json.loads((Path("reports") / relative).read_text(encoding="utf-8"))
+              actual = json.loads((Path("artifacts/reproduced_reports") / relative).read_text(encoding="utf-8"))
+              if stable(actual) != stable(expected):
+                  raise SystemExit(f"Research values differ in {relative}")
+
+          expected_report = Path("reports/FINAL_REPORT.md").read_text(encoding="utf-8")
+          actual_report = Path("artifacts/reproduced_reports/FINAL_REPORT.md").read_text(encoding="utf-8")
+          if actual_report != expected_report:
+              raise SystemExit("Consolidated report differs from the tracked report")
+          print("Tracked research values reproduced successfully.")
+          '@ | .\.venv\Scripts\python.exe -

@@ -1,8 +1,12 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
-from defect_prediction.historical_results import load_historical_results
+from defect_prediction.historical_results import (
+    load_historical_results,
+    load_research_results,
+)
 
 
 def _metrics(ap, precision, recall, f1, *, tn, fp, fn, tp):
@@ -57,7 +61,16 @@ def test_historical_results_join_frozen_metrics_without_recalculation(tmp_path):
             }
             for project in projects
         ],
-        "summary": {"top_20_percent_recall": {"mean": 0.5}},
+        "summary": {
+            "top_20_percent_recall": {"mean": 0.5},
+            "variants": {
+                "source_selected_threshold": {
+                    "precision": {"mean": 0.2},
+                    "recall": {"mean": 1.0},
+                    "f1": {"mean": 1 / 3},
+                }
+            },
+        },
     }
     lopo_path = tmp_path / "lopo.json"
     source_path = tmp_path / "source.json"
@@ -72,3 +85,43 @@ def test_historical_results_join_frozen_metrics_without_recalculation(tmp_path):
     assert result["projects"][0]["top_20_percent_recall"] == 0.5
     assert result["projects"][0]["source_selected_flagged_percentage"] == 100.0
     assert result["source_selected_thresholds_flagging_all_or_nearly_all"] == projects
+
+
+def test_compact_research_reports_are_validated_and_cross_checked():
+    root = Path(__file__).resolve().parents[1]
+    result = load_research_results(
+        root / "reports" / "baseline" / "summary.json",
+        root / "reports" / "model_comparison" / "summary.json",
+        root / "reports" / "source_similarity" / "summary.json",
+    )
+
+    assert result["available_sections"] == [
+        "baseline",
+        "model_comparison",
+        "source_similarity",
+    ]
+    assert result["unavailable_sections"] == []
+    assert result["model_comparison"]["summary"]["models"][
+        "logistic_regression"
+    ]["average_precision"]["mean"] == 0.5541701254966209
+    assert result["source_similarity"]["summary"]["strategies"][
+        "similar_sources"
+    ]["average_precision"]["mean"] == 0.5335447093133792
+
+
+def test_compact_research_report_failure_is_section_local(tmp_path):
+    root = Path(__file__).resolve().parents[1]
+    result = load_research_results(
+        tmp_path / "missing.json",
+        root / "reports" / "model_comparison" / "summary.json",
+        None,
+    )
+
+    assert result["available_sections"] == ["model_comparison"]
+    assert result["baseline"] is None
+    assert result["model_comparison"] is not None
+    assert result["source_similarity"] is None
+    assert {item["section"] for item in result["unavailable_sections"]} == {
+        "baseline",
+        "source_similarity",
+    }

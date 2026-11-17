@@ -123,8 +123,9 @@ def test_missing_configured_reports_do_not_block_predictions(tmp_path, sample_da
     config, _, _, test = _deployment(tmp_path, sample_data)
     settings = json.loads(config.read_text(encoding="utf-8"))
     settings["historical_reports"] = {
-        "lopo_results": "missing-lopo.json",
-        "source_validation_results": "missing-source.json",
+        "baseline_summary": "missing-baseline.json",
+        "model_comparison_summary": "missing-model.json",
+        "source_similarity_summary": "missing-similarity.json",
     }
     config.write_text(json.dumps(settings), encoding="utf-8")
 
@@ -137,8 +138,40 @@ def test_missing_configured_reports_do_not_block_predictions(tmp_path, sample_da
 
     assert health.status_code == 200
     assert prediction.status_code == 200
-    assert reports.status_code == 503
-    assert "Historical reports are unavailable" in reports.json()["detail"]
+    assert reports.status_code == 200
+    assert reports.json()["available_sections"] == []
+    assert len(reports.json()["unavailable_sections"]) == 3
+
+
+def test_api_serves_validated_tracked_research_summaries(tmp_path, sample_data):
+    config, _, _, _ = _deployment(tmp_path, sample_data)
+    settings = json.loads(config.read_text(encoding="utf-8"))
+    root = Path(__file__).resolve().parents[1]
+    settings["historical_reports"] = {
+        "baseline_summary": str(root / "reports" / "baseline" / "summary.json"),
+        "model_comparison_summary": str(
+            root / "reports" / "model_comparison" / "summary.json"
+        ),
+        "source_similarity_summary": str(
+            root / "reports" / "source_similarity" / "summary.json"
+        ),
+    }
+    config.write_text(json.dumps(settings), encoding="utf-8")
+
+    with TestClient(create_app(config)) as client:
+        response = client.get("/experiment-results")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["available_sections"] == [
+        "baseline",
+        "model_comparison",
+        "source_similarity",
+    ]
+    assert body["model_comparison"]["summary"]["models"][
+        "logistic_regression"
+    ]["average_precision"]["mean"] == 0.5541701254966209
+    assert body["source_similarity"]["random_subset_count"] == 20
 
 
 def test_api_predictions_agree_with_direct_pipeline(tmp_path, sample_data):

@@ -1,267 +1,154 @@
 # Software Defect Prediction
 
-This project trains and evaluates a simple cross-project software-defect model, reports its operating tradeoffs, exposes a FastAPI prediction service, and provides a React dashboard for scoring CSV batches and reviewing the frozen experiments. The evaluation experiments remain frozen: the service and frontend do not retrain a model, choose a new threshold, or write into an evaluation directory.
+A reproducible cross-project software-defect study with a checksum-pinned FastAPI scoring service and React dashboard. The research uses 20 static class metrics from 8,416 observations across 25 releases of seven historical Java projects. Evaluation models and reports are kept separate from the currently served `logistic-regression-jedit-holdout-v1` pipeline.
 
-## What each major component does
+The complete methods, full-precision calculations, related work, per-experiment interpretation, and limitations are in the [consolidated final report](reports/FINAL_REPORT.md). Dataset provenance, licenses, release links, features, and label construction are in [the dataset documentation](docs/DATASET.md).
 
-- `schema.py` defines the exact 20 numeric metrics and their order.
-- `data.py` validates research data, identifiers, labels, and numeric metrics.
-- `modeling.py` builds leakage-safe scikit-learn pipelines. Imputation and scaling are saved inside the pipeline.
-- `experiment.py`, `lopo.py`, `model_comparison.py`, `source_similarity.py`, and `source_validation.py` are separate, reproducible evaluation experiments.
-- `reporting.py` reads frozen source-validation results and adds the missing always-defective baseline, flagged counts, flagged percentages, and a clear separation between classification and ranking results. It does not fit a model.
-- `deployment.py` copies the chosen saved pipeline byte-for-byte into a separate deployment directory and records its checksum and training provenance. It refuses to replace a different artifact.
-- `prediction.py` verifies the explicitly configured checksum, checks the saved feature schema, loads the pipeline once, and contains all scoring/ranking logic.
-- `api.py` contains only the FastAPI lifecycle, input/output models, and routes.
-- `historical_results.py` joins the intended frozen LOPO and source-validation reports into a read-only dashboard response. It does not fit or tune anything.
-- `config/service.json` explicitly pins the deployed model version, manifest path, SHA-256 checksum, and maximum batch size.
-- `frontend/` is a React, TypeScript, Vite, and Tailwind CSS dashboard. Its backend URL comes from `VITE_API_BASE_URL`.
-- `scripts/dev.mjs` is the cross-platform local launcher. It checks prerequisites and ports, starts the backend first, waits for `/health`, starts Vite, labels both log streams, and cleans up its process trees.
+## Main findings
 
-## Windows local-development quick start
+- Logistic regression had the highest equal-project macro average precision (AP), **0.554**, among the tested fixed configurations. Random forest achieved **0.545** and histogram gradient boosting **0.514**.
+- Random forest had a slightly higher macro top-20% recall than logistic regression, **0.313 versus 0.309**, but lower AP.
+- Selecting the three closest projects by unlabelled metric distributions did not improve ranking overall: macro AP was **0.534**, versus **0.554** with all sources and **0.547** for the mean exhaustive three-project reference.
+- Higher F1 at threshold 0.5 does not establish better ranking. AP and top-20% recall are the primary ranking measures.
 
-These commands are for local development on your computer, not public production hosting.
+These are exploratory comparisons on seven historical projects. They establish no novelty, statistical significance, causal conclusion, production readiness, or expected performance on a new organization.
 
-Run this one-time setup from the repository root. Virtual-environment activation is optional because every command uses its Python executable directly:
+## Repository map
+
+- `src/defect_prediction/`: validated data loading, leakage-safe experiments, report generation, deployment packaging, and API.
+- `config/`: immutable data manifest and exact experiment, service, and model settings.
+- `docs/`: dataset, import, and predeclared experiment protocols.
+- `reports/`: compact tracked research summaries and the consolidated report.
+- `artifacts/`: ignored full outputs, per-record predictions, fitted research models, and deployment package.
+- `frontend/`: React, TypeScript, Vite, and Tailwind dashboard.
+- `scripts/dev.mjs`: cross-platform preflight and local service launcher.
+
+## Windows setup from a clean checkout
+
+Use Python 3.12 and Node.js 24 from the repository root:
 
 ```powershell
 py -3.12 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install --upgrade pip
 .\.venv\Scripts\python.exe -m pip install -r requirements-lock.txt
 .\.venv\Scripts\python.exe -m pip install -e . --no-deps
-npm install
-npm --prefix frontend install
+npm ci
+npm --prefix frontend ci
 ```
 
-The direct dependencies are pinned in `pyproject.toml`, `requirements.txt`, and the two npm lockfiles. `requirements-lock.txt` records the complete tested Python environment.
-
-The configured deployment model, schema, manifest, and historical reports must already exist. Check everything without starting or stopping a service:
+Compact research summaries are tracked, so the Experiments page does not require ignored research artifacts. The served model is deliberately ignored and must be reproduced in a clean checkout:
 
 ```powershell
+.\.venv\Scripts\python.exe -m defect_prediction.download
+.\.venv\Scripts\python.exe -m defect_prediction.experiment
+.\.venv\Scripts\python.exe -m defect_prediction.deployment
 npm run doctor
 ```
 
-If the deployment package is missing but the preserved baseline exists, create the separate deployment copy once:
+The download command verifies every manifest checksum. Deployment packaging copies the evaluated logistic pipeline byte-for-byte, verifies its SHA-256 checksum and schema, and refuses to replace a different artifact. It does not retrain the model.
 
-```powershell
-.\.venv\Scripts\python.exe -m defect_prediction.deployment
-```
-
-This packaging command copies the saved model; it does not fit, retrain, or overwrite an evaluation model.
-
-Start the backend and frontend together from one terminal:
+Start both local services:
 
 ```powershell
 npm run dev
 ```
 
-Open the dashboard at `http://127.0.0.1:5173` and FastAPI documentation at `http://127.0.0.1:8000/docs`. Press **Ctrl+C once** in that terminal to stop both managed services and their child processes.
+Open the dashboard at `http://127.0.0.1:5173` and API documentation at `http://127.0.0.1:8000/docs`. Press Ctrl+C once to stop both managed services. The launcher also supports `npm run dev:backend`, `npm run dev:frontend`, and `npm run doctor`.
 
-The launcher resolves every path from its own file, so paths containing spaces are safe. It passes an absolute `DEFECT_SERVICE_CONFIG`, uses `.venv\Scripts\python.exe`, waits for backend health before Vite, injects `VITE_API_BASE_URL=http://127.0.0.1:8000` without changing `frontend/.env`, and keeps Vite on strict port 5173.
+This setup establishes local release readiness only. No public hosting, publishing, push, release creation, or release tag is performed by this repository workflow.
 
-To start only one service:
+## Reproduce all reported experiments
 
-```powershell
-npm run dev:backend
-npm run dev:frontend
-```
-
-The frontend-only command expects a compatible backend to be available at the configured API URL.
-
-If a port is busy, startup stops before launching anything. The error includes the listening PID and commands to inspect and stop that specific process. You can run the same preflight explicitly:
+The order below recreates the saved baseline, seven-project LOPO evaluation, source-validated threshold experiment, fixed model comparison, exhaustive source-selection experiment, compact tracked summaries, and served deployment package:
 
 ```powershell
-npm run doctor
-Get-NetTCPConnection -State Listen -LocalPort 8000,5173
-```
-
-Never kill all Node or Python processes; inspect the reported PID and stop only a confirmed stale development server.
-
-## Reproduce the existing experiments
-
-Download and checksum the pinned Zenodo data:
-
-```powershell
-python -m defect_prediction.download
-```
-
-Run the original JEdit holdout baseline, saved-pipeline reevaluation, leave-one-project-out review, and source-only threshold experiment:
-
-```powershell
-python -m defect_prediction.experiment
-python -m defect_prediction.evaluate
-python -m defect_prediction.lopo
-python -m defect_prediction.source_validation
-```
-
-The baseline holds out every JEdit release. LOPO uses each complete project as a target in turn. Source validation chooses thresholds only from inner source-project folds; outer target labels are used only for final metrics.
-
-## Reproduce the fixed model comparison
-
-The predeclared protocol is in `docs/MODEL_COMPARISON_PROTOCOL.md`, and its exact settings are in `config/model_comparison.json`. It compares dummy prior, logistic regression, random forest, and histogram gradient boosting on identical leave-one-project-out folds. Seed 42 is the primary comparison; random forest also runs the predeclared sensitivity seeds 17 and 91. This experiment does not tune a model or threshold from outer-test outcomes and does not alter the separate source-selected-threshold results.
-
-Run the complete comparison from the repository root with this exact PowerShell command:
-
-```powershell
+.\.venv\Scripts\python.exe -m defect_prediction.download
+.\.venv\Scripts\python.exe -m defect_prediction.experiment
+.\.venv\Scripts\python.exe -m defect_prediction.evaluate
+.\.venv\Scripts\python.exe -m defect_prediction.lopo
+.\.venv\Scripts\python.exe -m defect_prediction.source_validation
 .\.venv\Scripts\python.exe -m defect_prediction.model_comparison
-```
-
-Outputs are isolated under `artifacts/model_comparison`: `comparison_results.json`, `REPORT.md`, per-project results and logistic-difference CSVs, random-forest seed results and variation CSVs, per-fit runtimes, and all per-record predictions. The JSON records the frozen configuration, dependency versions, raw-dataset SHA-256 checksums, outer-record identity checksums, duplicate audits, and protected-artifact integrity hashes. Existing baseline, deployment, LOPO, source-validation, model-improvement, and reporting artifacts are hash-checked before and after the run.
-
-## Reproduce the source-project similarity experiment
-
-The predeclared protocol is in `docs/SOURCE_SIMILARITY_PROTOCOL.md`, with exact settings in `config/source_similarity.json`. For every outer target, it compares the unchanged logistic-regression pipeline trained on all six sources, the three closest sources by source-scaled median/IQR metric summaries, and every one of the 20 possible three-source subsets. The subset reference is their average, never the best result. Similarity may inspect unlabelled target metrics but never target labels.
-
-Run the complete experiment from the repository root with this exact PowerShell command:
-
-```powershell
 .\.venv\Scripts\python.exe -m defect_prediction.source_similarity
+.\.venv\Scripts\python.exe -m defect_prediction.research_reporting
+.\.venv\Scripts\python.exe -m defect_prediction.deployment
 ```
 
-Large complete outputs are kept under the existing ignored `artifacts/source_similarity` directory. Git-visible findings are written separately to `reports/source_similarity`: the research report, per-project summary, selected-source distances, all 140 subset results, and equal-weight summary. The run checks that all-source results exactly reproduce the fixed logistic baseline and that deployment and prior experiment artifacts remain unchanged.
+The similarity runner is `defect_prediction.source_similarity`. There is no `source_similarity4` module.
 
-## Reproduce the model-improvement experiment
+Relevant fixed inputs:
 
-The bounded candidate grid and frozen replacement gates are in `config/model_improvement.json`. The runner evaluates tuned regularised logistic regression, random forest, and histogram gradient boosting, alongside the preserved logistic model, constant-prior reference, and lines-of-code ranking reference. Its outer and inner folds both group by complete project, so releases of one project never cross a training/validation boundary. Ant is not loaded by this command.
+- [Original baseline configuration](config/experiment.json)
+- [Model-comparison configuration](config/model_comparison.json) and [protocol](docs/MODEL_COMPARISON_PROTOCOL.md)
+- [Source-similarity configuration](config/source_similarity.json) and [protocol](docs/SOURCE_SIMILARITY_PROTOCOL.md)
+- [Pinned dataset manifest](config/data_manifest.json)
+- [Read-only service configuration](config/service.json)
+
+Large results remain ignored under `artifacts/`. Reviewable summaries are tracked in [reports/model_comparison](reports/model_comparison) and [reports/source_similarity](reports/source_similarity). The manual `Full research reproduction` GitHub Actions workflow keeps these expensive runs separate from ordinary CI.
+
+The earlier bounded model-improvement study remains preserved and is not used to change the service. Its command is:
 
 ```powershell
 .\.venv\Scripts\python.exe -m defect_prediction.model_improvement run
 ```
 
-The command writes `nested_results.json`, `nested_outer_results.csv`, `development_configuration_results.csv`, and `final_selection.json` under `artifacts/model_improvement`. A validated checkpoint lets an interrupted run resume without repeating completed outer folds. The frozen v1 experiment retained `logistic-regression-jedit-holdout-v1`: the best candidate gained only 0.00608 macro project AP on development data, below the predeclared 0.01 deployment gate. Consequently no candidate artifact was packaged and `config/service.json` was not changed.
+Its frozen decision retained the served baseline because the best development gain did not meet the predeclared replacement gate.
 
-Only after the selection files exist, reproduce the explicitly non-final Ant diagnostic:
+## Dashboard and API
 
-```powershell
-.\.venv\Scripts\python.exe -m defect_prediction.model_improvement external-ant --ant-csv .\data\external\ant-1.7.csv
-```
+The Prediction screen imports CSV/TSV, JSON, XLSX, and dense ARFF data, validates explicit feature mappings, submits bounded batches, recalculates a global deterministic ranking, and exports CSV results. Scores are relative defect-risk scores, not calibrated probabilities.
 
-The complete executed comparison, per-project results, decision, commands, and limitations are recorded in `artifacts/model_improvement/REPORT.md`. The `package` subcommand refuses to create a candidate artifact when the frozen selection says to retain the baseline.
+The Experiments screen reads only validated compact reports from `GET /experiment-results`. It shows:
 
-## Complete baseline reporting
+- baseline macro and per-project results;
+- every fixed model on every target project;
+- AP and top-20% recall as primary ranking metrics;
+- threshold-0.5 classification metrics;
+- selected source projects and distances; and
+- the mean, sample standard deviation, and range over all 20 three-project subsets.
 
-Generate the additional report without fitting or overwriting any experiment:
+Missing or invalid research summaries are isolated to the affected section and do not block predictions. Historical research models never replace the served pipeline, and opening the page never trains a model.
 
-```powershell
-python -m defect_prediction.reporting
-```
+API routes:
 
-The outputs are `artifacts/reporting/complete_baseline_report.json` and `artifacts/reporting/complete_baseline_report.md`. Every project reports the number and percentage flagged by:
+- `GET /health`
+- `GET /model-info`
+- `GET /experiment-results`
+- `POST /predict`
 
-- the fixed 0.5 rule;
-- the source-selected threshold; and
-- always predicting defective.
-
-The always-defective baseline has recall 1.0, flags every record, and has precision equal to the target defect prevalence. It includes precision, recall, F1, and the full confusion matrix.
-
-Several source-selected thresholds are not useful operating policies: they flag exactly 100% of Camel, Lucene, POI, and Synapse records, and 99.886% of JEdit records. The report defines “nearly all” as at least 95%. AP and top-20% recall remain in a separate ranking-results section. No additional choice is tuned against outer-test results.
-
-## Served model and provenance
-
-Package the deployment copy:
+Example live checks:
 
 ```powershell
-python -m defect_prediction.deployment
-```
-
-This command does not call `fit`. It makes a byte-identical copy of `artifacts/baseline/logistic_pipeline.joblib` at `artifacts/deployment/logistic-regression-jedit-holdout-v1/pipeline.joblib`, alongside a schema and manifest. Repeating the command is safe only when the existing deployment artifact is identical; otherwise it stops instead of overwriting it.
-
-Model version `logistic-regression-jedit-holdout-v1` trained on exactly these projects:
-
-- Camel
-- Log4j
-- Lucene
-- POI
-- Synapse
-- Velocity
-
-JEdit was evaluation-only and was not in training. The model uses median imputation with missing indicators, standard scaling, and logistic regression, all from the saved pipeline. This first deployment deliberately serves the already evaluated model; it does not silently train an all-project production model.
-
-## API behavior
-
-The preferred local command is `npm run dev`. To run only FastAPI, use:
-
-```powershell
-npm run dev:backend
-```
-
-Startup fails if the configured manifest, version, checksum, feature schema, or model classes do not match. The process loads the pipeline once at startup.
-
-The routes are:
-
-- `GET /health`: confirms the configured model loaded.
-- `GET /model-info`: returns model version, verified artifact checksum, exact training/evaluation projects, features, score wording, optional frozen threshold/calibration status, and batch limit.
-- `GET /experiment-results`: serves a curated, read-only view of the saved seven-project LOPO and source-validation reports.
-- `POST /predict`: accepts 1–100 records and returns each identifier, model score, within-batch rank, and model version.
-
-Every record must contain `record_id` plus all 20 training metrics. Unknown fields, missing metrics, non-numeric/infinite values, blank or duplicate identifiers, empty batches, and oversized batches are rejected. A metric may be `null` because missing-value handling is part of the saved training pipeline. Identifiers are never used as predictive features.
-
-Scores are relative defect-risk **model scores, not calibrated probabilities**. Rank 1 is the highest score in the submitted batch; equal scores are ordered deterministically by record identifier.
-
-## Test the running API from PowerShell
-
-Keep the server running in the first PowerShell window. In a second window, run these exact commands from the repository root:
-
-```powershell
-Invoke-RestMethod -Method Get -Uri http://127.0.0.1:8000/health | ConvertTo-Json -Depth 10
-Invoke-RestMethod -Method Get -Uri http://127.0.0.1:8000/model-info | ConvertTo-Json -Depth 10
+Invoke-RestMethod http://127.0.0.1:8000/health | ConvertTo-Json -Depth 10
+Invoke-RestMethod http://127.0.0.1:8000/model-info | ConvertTo-Json -Depth 10
 $requestBody = Get-Content .\config\example_request.json -Raw
 Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8000/predict -ContentType 'application/json' -Body $requestBody | ConvertTo-Json -Depth 10
 ```
 
-`config/example_request.json` is a complete valid request. It contains a record identifier and the exact 20 metrics in the training schema; it contains no label or defect outcome.
+Import behavior and format boundaries are documented in [docs/IMPORTING.md](docs/IMPORTING.md).
 
-Interactive OpenAPI documentation is available at `http://127.0.0.1:8000/docs` while the service runs.
+## Verification
 
-## React frontend
-
-`npm run dev` supplies the local backend URL to Vite without overwriting a personal `.env` file. For a separately managed frontend, create `frontend/.env` from the example and run the frontend-only command from the repository root:
+Run the complete automated release checks:
 
 ```powershell
-Copy-Item .\frontend\.env.example .\frontend\.env
-npm run dev:frontend
-```
-
-Open `http://127.0.0.1:5173`.
-
-The frontend URL is configured in `frontend/.env`:
-
-```text
-VITE_API_BASE_URL=http://127.0.0.1:8000
-```
-
-The dashboard has three deliberately separate screens:
-
-- **Prediction** safely previews CSV/TSV, JSON, XLSX, and dense ARFF files locally, sends only explicitly mapped valid metric records to `POST /predict`, recalculates global ranks after all bounded batches succeed, and downloads results as CSV. It supports the dashboard `record_id` plus 20-metric schema and the original Jureczko/PROMISE two-`name` layout. Blank metric cells are sent as `null` for the saved imputer; invalid records require explicit valid-rows-only consent.
-- **Experiments** reads only `GET /experiment-results`. It compares dummy and logistic-regression average precision and shows the preserved precision, recall, F1, top-20% recall, and selected-threshold warning. These are historical results, not new predictions.
-- **Model information** reads `GET /model-info` and shows the version, training/evaluation projects, required features, artifact handling, and limitations.
-
-FastAPI CORS allows the local Vite origins `http://127.0.0.1:5173` and `http://localhost:5173`. Add an intentional origin to `config/service.json` before using another frontend host.
-
-To run frontend tests and produce the static production build:
-
-```powershell
-Set-Location .\frontend
-npm test
-npm run build
-```
-
-The production files are written to `frontend/dist/`.
-
-## Run automated tests
-
-```powershell
-.\.venv\Scripts\python.exe -m pytest
+.\.venv\Scripts\python.exe -m pytest -q
 npm run test:launcher
 npm --prefix frontend test
 npm --prefix frontend run build
+npm run doctor
 ```
 
-Tests cover research-data guardrails, project isolation, frozen-pipeline persistence, reporting calculations, API input validation, configured model loading/checksums, provenance, bounded batches, and exact agreement between direct pipeline scores and API scores.
+Backend tests cover project isolation, training-only preprocessing, feature exclusion, metric and tie calculations, model/result association, source-selection validity, checksums, API validation, and direct-pipeline/API agreement. Frontend tests cover all import formats, mapping and invalid-row handling, batching, retry/cancellation, global ranking, stable exports, footer links, and the values rendered from tracked experiment summaries.
 
-Frontend tests cover every implemented import format, delimiters, worksheet selection, safe dense ARFF parsing, duplicate headers, explicit mappings, identifiers and labels, invalid/partial rows, format parity, batch retry/cancellation, global ranking, and stable template/result exports.
+CI runs the tests and production build in a fresh environment and reproduces the checksum-verified served model. The separate manual workflow executes the complete research reproduction.
 
-Launcher tests use controlled temporary listeners and ports to cover backend/frontend conflicts, missing configuration, missing reports, backend startup failure, process cleanup, and immediate restart. They stop only processes created by the tests.
+## Known limitations
 
-## Dataset and interpretation
+- The corpus contains only seven older Java projects and observational defect labels that may be incomplete or mislinked.
+- Releases repeat classes, so rows are not necessarily independent.
+- Exact metric-vector matches occur across projects, sometimes with different labels; a matching vector alone is not proof of copied code and no rows were silently removed.
+- Projects differ in size and prevalence. The three-project reference matches source-project count, not training-row count.
+- Similarity selection accesses unlabelled target metrics and is not a strictly source-only approach.
+- Fixed configurations are bounded comparisons, not an exhaustive search. No statistical-significance analysis was performed.
+- The served JEdit-holdout pipeline is a research demonstration, not a calibrated or production-qualified risk model.
 
-The data source, CC-BY-4.0 license, label construction, metric meanings, and limitations are documented in [docs/DATASET.md](docs/DATASET.md). Supported prediction-file layouts, validation behavior, limits, and the raw-source-code boundary are documented in [docs/IMPORTING.md](docs/IMPORTING.md). Results are cross-project research results, not proof that a cutoff will transfer to every codebase. A future deployment model may be trained separately on a declared project set, but evaluation artifacts and outer-test results must remain untouched.
+See [release notes](reports/RELEASE_NOTES.md) for the final milestone scope and local release status.

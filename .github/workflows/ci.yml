@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            frontend/package-lock.json
+      - name: Create isolated Python environment
+        run: python -m venv .venv
+      - name: Install Python dependencies
+        run: |
+          .venv/bin/python -m pip install -r requirements-lock.txt
+          .venv/bin/python -m pip install --no-deps -e .
+      - name: Install JavaScript dependencies
+        run: |
+          npm ci
+          npm ci --prefix frontend
+      - name: Backend tests
+        run: .venv/bin/python -m pytest -q
+      - name: Reproduce the checksum-verified served model
+        run: |
+          .venv/bin/python -m defect_prediction.download
+          .venv/bin/python -m defect_prediction.experiment
+          .venv/bin/python -m defect_prediction.deployment
+      - name: Launcher tests
+        run: npm run test:launcher
+      - name: Frontend tests
+        run: npm --prefix frontend test
+      - name: Production frontend build
+        run: npm --prefix frontend run build

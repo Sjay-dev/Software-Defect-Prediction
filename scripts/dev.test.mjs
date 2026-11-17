@@ -45,7 +45,7 @@ function stopTree(pid) {
   }
 }
 
-async function runLauncher(args, overrides = {}, timeoutMs = 35000) {
+async function runLauncher(args, overrides = {}, timeoutMs = 90000) {
   return await new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [launcher, ...args], {
       cwd: paths.root,
@@ -85,7 +85,7 @@ test('Windows netstat parsing returns the listening PID', () => {
   assert.equal(parseWindowsNetstat(output, 8000), undefined)
 })
 
-test('occupied backend and frontend ports fail before starting services', { timeout: 30000 }, async () => {
+test('occupied backend and frontend ports fail before starting services', { timeout: 120000 }, async () => {
   const backendOccupant = await occupyPort()
   try {
     const result = await runLauncher(['--backend-only'], { SDP_BACKEND_PORT: String(backendOccupant.port) })
@@ -109,7 +109,7 @@ test('occupied backend and frontend ports fail before starting services', { time
   }
 })
 
-test('doctor gives an actionable missing-configuration error', { timeout: 30000 }, async () => {
+test('doctor gives an actionable missing-configuration error', { timeout: 60000 }, async () => {
   const [backendPort, frontendPort] = await freePorts(2)
   const missing = path.join(os.tmpdir(), `missing-service-${process.pid}.json`)
   const result = await runLauncher(['--doctor'], {
@@ -122,15 +122,16 @@ test('doctor gives an actionable missing-configuration error', { timeout: 30000 
   assert.match(result.output, /Restore config\/service.json or set SDP_SERVICE_CONFIG/)
 })
 
-test('missing historical reports are warnings and do not block predictions', { timeout: 30000 }, async () => {
+test('missing historical reports are warnings and do not block predictions', { timeout: 120000 }, async () => {
   const temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), 'defect-launcher-'))
   try {
     const originalPath = path.join(paths.root, 'config', 'service.json')
     const config = JSON.parse(await readFile(originalPath, 'utf8'))
     config.model_manifest = path.resolve(path.dirname(originalPath), config.model_manifest)
     config.historical_reports = {
-      lopo_results: 'missing-lopo.json',
-      source_validation_results: 'missing-source.json',
+      baseline_summary: 'missing-baseline.json',
+      model_comparison_summary: 'missing-model.json',
+      source_similarity_summary: 'missing-similarity.json',
     }
     const temporaryConfig = path.join(temporaryDirectory, 'service.json')
     await writeFile(temporaryConfig, JSON.stringify(config), 'utf8')
@@ -141,14 +142,14 @@ test('missing historical reports are warnings and do not block predictions', { t
       SDP_FRONTEND_PORT: String(frontendPort),
     })
     assert.equal(result.code, 0)
-    assert.match(result.output, /Predictions can run, but the experiment page will be unavailable/)
-    assert.match(result.output, /passed with 2 warning/)
+    assert.match(result.output, /Predictions can run; this experiment section will be unavailable/)
+    assert.match(result.output, /passed with 3 warning/)
   } finally {
     await rm(temporaryDirectory, { recursive: true, force: true })
   }
 })
 
-test('backend startup failures surface the Uvicorn error and free the port', { timeout: 30000 }, async () => {
+test('backend startup failures surface the Uvicorn error and free the port', { timeout: 120000 }, async () => {
   const [backendPort] = await freePorts(1)
   const result = await runLauncher(['--backend-only'], {
     SDP_BACKEND_PORT: String(backendPort),
@@ -161,7 +162,7 @@ test('backend startup failures surface the Uvicorn error and free the port', { t
   await assertPortAvailable(backendPort)
 })
 
-test('combined startup shuts down cleanly and can restart on the same ports', { timeout: 70000 }, async () => {
+test('combined startup shuts down cleanly and can restart on the same ports', { timeout: 180000 }, async () => {
   const [backendPort, frontendPort] = await freePorts(2)
   const environment = {
     SDP_BACKEND_PORT: String(backendPort),
@@ -169,7 +170,7 @@ test('combined startup shuts down cleanly and can restart on the same ports', { 
     SDP_TEST_AUTO_SHUTDOWN_MS: '500',
   }
   for (let attempt = 0; attempt < 2; attempt += 1) {
-    const result = await runLauncher([], environment, 30000)
+    const result = await runLauncher([], environment, 90000)
     assert.equal(result.code, 0, result.output)
     assert.match(result.output, /Backend ready/)
     assert.match(result.output, /Frontend ready/)

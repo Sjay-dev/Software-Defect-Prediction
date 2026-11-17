@@ -11,7 +11,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict, Field, create_model, field_validator
 
-from .historical_results import HistoricalResultsError, load_historical_results
+from .historical_results import load_research_results
 from .prediction import Predictor, load_predictor, load_service_settings
 from .schema import FEATURE_COLUMNS
 
@@ -85,19 +85,11 @@ def create_app(config_path: Path | None = None) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         app.state.predictor = load_predictor(settings)
-        app.state.historical_results = None
-        app.state.historical_results_error = None
-        if (
-            settings.lopo_results_path is not None
-            and settings.source_validation_results_path is not None
-        ):
-            try:
-                app.state.historical_results = load_historical_results(
-                    settings.lopo_results_path,
-                    settings.source_validation_results_path,
-                )
-            except HistoricalResultsError as error:
-                app.state.historical_results_error = str(error)
+        app.state.historical_results = load_research_results(
+            settings.baseline_summary_path,
+            settings.model_comparison_summary_path,
+            settings.source_similarity_summary_path,
+        )
         yield
 
     application = FastAPI(
@@ -136,16 +128,6 @@ def create_app(config_path: Path | None = None) -> FastAPI:
     @application.get("/experiment-results")
     def experiment_results(request: Request) -> dict[str, Any]:
         results = request.app.state.historical_results
-        if results is None:
-            reason = request.app.state.historical_results_error
-            raise HTTPException(
-                status_code=503,
-                detail=(
-                    f"Historical reports are unavailable: {reason}"
-                    if reason
-                    else "Historical reports are not configured for this service."
-                ),
-            )
         return results
 
     @application.post("/predict", response_model=PredictResponse)

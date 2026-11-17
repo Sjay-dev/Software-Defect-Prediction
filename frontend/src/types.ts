@@ -47,9 +47,16 @@ export type MetricSummary = {
 
 export type EvaluationMetrics = {
   average_precision: number
+  top_20_percent_recall?: number
   precision: number
   recall: number
   f1: number
+  confusion_matrix?: {
+    tn: number
+    fp: number
+    fn: number
+    tp: number
+  }
 }
 
 export type ExperimentProject = {
@@ -61,12 +68,14 @@ export type ExperimentProject = {
   top_20_percent_recall: number
   top_20_percent_reviewed_records: number
   source_selected_threshold: number
+  source_selected_metrics: EvaluationMetrics
   source_selected_flagged_records: number
   source_selected_flagged_percentage: number
 }
 
-export type ExperimentResults = {
+export type BaselineResults = {
   report_type: string
+  schema_version: number
   historical: true
   project_count: number
   decision_threshold: number
@@ -85,8 +94,96 @@ export type ExperimentResults = {
       f1: MetricSummary
     }
     top_20_percent_recall: MetricSummary
+    source_selected_threshold: {
+      precision: MetricSummary
+      recall: MetricSummary
+      f1: MetricSummary
+    }
   }
   projects: ExperimentProject[]
+}
+
+export type FixedModelName = 'dummy_prior' | 'logistic_regression' | 'random_forest' | 'hist_gradient_boosting'
+
+export type RankingEvaluationMetrics = Required<EvaluationMetrics>
+
+export type ModelComparisonResults = {
+  report_type: 'fixed_model_comparison'
+  schema_version: 1
+  historical: true
+  project_count: number
+  decision_threshold: number
+  top_fraction: number
+  models: FixedModelName[]
+  ranking_note: string
+  finding: string
+  summary: {
+    models: Record<FixedModelName, Record<'average_precision' | 'top_20_percent_recall' | 'precision' | 'recall' | 'f1', MetricSummary>>
+  }
+  projects: Array<{
+    project: string
+    records: number
+    defect_prevalence: number
+    models: Record<FixedModelName, RankingEvaluationMetrics>
+  }>
+}
+
+export type Distribution = MetricSummary
+
+export type SimilarityResults = {
+  report_type: 'source_project_similarity_selection'
+  schema_version: 1
+  historical: true
+  project_count: number
+  decision_threshold: number
+  top_fraction: number
+  selected_source_count: number
+  random_subset_count: number
+  unlabelled_target_access: string
+  ranking_note: string
+  finding: string
+  summary: {
+    strategies: Record<'all_sources' | 'similar_sources' | 'random_subset_mean', Record<'average_precision' | 'top_20_percent_recall' | 'precision' | 'recall' | 'f1', MetricSummary>>
+    differences_from_all_sources: Record<'similar_minus_all' | 'random_mean_minus_all' | 'similar_minus_random_mean', Record<'average_precision' | 'top_20_percent_recall' | 'precision' | 'recall' | 'f1', MetricSummary>>
+  }
+  projects: Array<{
+    project: string
+    records: number
+    defect_prevalence: number
+    selected_sources: Array<{
+      source_project: string
+      distance: number
+      rank: number
+      selected: boolean
+    }>
+    all_sources: {
+      source_projects: string[]
+      training_rows: number
+      training_defect_prevalence: number
+      metrics: RankingEvaluationMetrics
+    }
+    similar_sources: {
+      source_projects: string[]
+      training_rows: number
+      training_defect_prevalence: number
+      metrics: RankingEvaluationMetrics
+    }
+    random_subset_reference: {
+      combination_count: number
+      aggregation: string
+      distributions: Record<'average_precision' | 'top_20_percent_recall' | 'precision' | 'recall' | 'f1' | 'tn' | 'fp' | 'fn' | 'tp' | 'training_rows' | 'training_defect_prevalence' | 'training_seconds' | 'prediction_seconds', Distribution>
+    }
+  }>
+}
+
+export type ExperimentResults = {
+  report_type: 'consolidated_historical_research'
+  historical: true
+  available_sections: Array<'baseline' | 'model_comparison' | 'source_similarity'>
+  unavailable_sections: Array<{ section: string; reason: string }>
+  baseline: BaselineResults | null
+  model_comparison: ModelComparisonResults | null
+  source_similarity: SimilarityResults | null
 }
 
 export type Loadable<T> =

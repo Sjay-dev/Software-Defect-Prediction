@@ -26,8 +26,9 @@ class ServiceSettings:
     expected_model_version: str
     max_batch_size: int
     cors_origins: tuple[str, ...]
-    lopo_results_path: Path | None
-    source_validation_results_path: Path | None
+    baseline_summary_path: Path | None
+    model_comparison_summary_path: Path | None
+    source_similarity_summary_path: Path | None
 
 
 def load_service_settings(config_path: Path) -> ServiceSettings:
@@ -58,9 +59,14 @@ def load_service_settings(config_path: Path) -> ServiceSettings:
         expected_model_version=str(raw["expected_model_version"]),
         max_batch_size=max_batch_size,
         cors_origins=cors_origins,
-        lopo_results_path=resolve_optional(historical_reports.get("lopo_results")),
-        source_validation_results_path=resolve_optional(
-            historical_reports.get("source_validation_results")
+        baseline_summary_path=resolve_optional(
+            historical_reports.get("baseline_summary")
+        ),
+        model_comparison_summary_path=resolve_optional(
+            historical_reports.get("model_comparison_summary")
+        ),
+        source_similarity_summary_path=resolve_optional(
+            historical_reports.get("source_similarity_summary")
         ),
     )
 

@@ -1,0 +1,733 @@
+{
+  "decision_threshold": 0.5,
+  "historical": true,
+  "macro_average_note": "Each project has equal weight, regardless of its number of classes. Variation is the sample standard deviation across project scores.",
+  "nearly_all_definition": "At least 95% of target records flagged.",
+  "project_count": 7,
+  "projects": [
+    {
+      "defect_prevalence": 0.20186781609195403,
+      "dummy_prior": {
+        "average_precision": 0.20186781609195403,
+        "confusion_matrix": {
+          "fn": 562,
+          "fp": 0,
+          "labels": [
+            0,
+            1
+          ],
+          "matrix": [
+            [
+              2222,
+              0
+            ],
+            [
+              562,
+              0
+            ]
+          ],
+          "tn": 2222,
+          "tp": 0
+        },
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0
+      },
+      "logistic_regression": {
+        "average_precision": 0.2680474102609265,
+        "confusion_matrix": {
+          "fn": 411,
+          "fp": 381,
+          "labels": [
+            0,
+            1
+          ],
+          "matrix": [
+            [
+              1841,
+              381
+            ],
+            [
+              411,
+              151
+            ]
+          ],
+          "tn": 1841,
+          "tp": 151
+        },
+        "f1": 0.2760511882998172,
+        "precision": 0.28383458646616544,
+        "recall": 0.26868327402135234
+      },
+      "project": "camel",
+      "records": 2784,
+      "source_selected_flagged_percentage": 100.0,
+      "source_selected_flagged_records": 2784,
+      "source_selected_metrics": {
+        "average_precision": 0.2680474102609265,
+        "confusion_matrix": {
+          "fn": 0,
+          "fp": 2222,
+          "labels": [
+            0,
+            1
+          ],
+          "matrix": [
+            [
+              0,
+              2222
+            ],
+            [
+              0,
+              562
+            ]
+          ],
+          "tn": 0,
+          "tp": 562
+        },
+        "f1": 0.3359234907352062,
+        "precision": 0.20186781609195403,
+        "recall": 1.0
+      },
+      "source_selected_threshold": 0.05,
+      "top_20_percent_recall": 0.28113879003558717,
+      "top_20_percent_reviewed_records": 557
+    },
+    {
+      "defect_prevalence": 0.1732418524871355,
+      "dummy_prior": {
+        "average_precision": 0.1732418524871355,
+        "confusion_matrix": {
+          "fn": 303,
+          "fp": 0,
+          "labels": [
+            0,
+            1
+          ],
+          "matrix": [
+            [
+              1446,
+              0
+            ],
+            [
+              303,
+              0
+            ]
+          ],
+          "tn": 1446,
+          "tp": 0
+        },
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0
+      },
+      "logistic_regression": {
+        "average_precision": 0.3494055853758048,
+        "confusion_matrix": {
+          "fn": 142,
+          "fp": 378,
+          "labels": [
+            0,
+            1
+          ],
+          "matrix": [
+            [
+              1068,
+              378
+            ],
+            [
+              142,
+              161
+            ]
+          ],
+          "tn": 1068,
+          "tp": 161
+        },
+        "f1": 0.3824228028503563,
+        "precision": 0.2987012987012987,
+        "recall": 0.5313531353135313
+      },
+      "project": "jedit",
+      "records": 1749,
+      "source_selected_flagged_percentage": 99.88564894225271,
+      "source_selected_flagged_records": 1747,
+      "source_selected_metrics": {
+        "average_precision": 0.3494055853758048,
+        "confusion_matrix": {
+          "fn": 0,
+          "fp": 1444,
+          "labels": [
+            0,
+            1
+          ],
+          "matrix": [
+            [
+              2,
+              1444
+            ],
+            [
+              0,
+              303
+            ]
+          ],
+          "tn": 2,
+          "tp": 303
+        },
+        "f1": 0.29560975609756096,
+        "precision": 0.17344018317115054,
+        "recall": 1.0
+      },
+      "source_selected_threshold": 0.15,
+      "top_20_percent_recall": 0.41254125412541254,
+      "top_20_percent_reviewed_records": 350
+    },
+    {
+      "defect_prevalence": 0.579064587973274,
+      "dummy_prior": {
+        "average_precision": 0.579064587973274,
+        "confusion_matrix": {
+          "fn": 260,
+          "fp": 0,
+          "labels": [
+            0,
+            1
+          ],
+          "matrix": [
+            [
+              189,
+              0
+            ],
+            [
+              260,
+              0
+            ]
+          ],
+          "tn": 189,
+          "tp": 0
+        },
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0
+      },
+      "logistic_regression": {
+        "average_precision": 0.7427479855947112,
+        "confusion_matrix": {
+          "fn": 235,
+          "fp": 2,
+          "labels": [
+            0,
+            1
+          ],
+          "matrix": [
+            [
+              187,
+              2
+            ],
+            [
+              235,
+              25
+            ]
+          ],
+          "tn": 187,
+          "tp": 25
+        },
+        "f1": 0.17421602787456447,
+        "precision": 0.9259259259259259,
+        "recall": 0.09615384615384616
+      },
+      "project": "log4j",
+      "records": 449,
+      "source_selected_flagged_percentage": 85.74610244988864,
+      "source_selected_flagged_records": 385,
+      "source_selected_metrics": {
+        "average_precision": 0.7427479855947112,
+        "confusion_matrix": {
+          "fn": 33,
+          "fp": 158,
+          "labels": [
+            0,
+            1
+          ],
+          "matrix": [
+            [
+              31,
+              158
+            ],
+            [
+              33,
+              227
+            ]
+          ],
+          "tn": 31,
+          "tp": 227
+        },
+        "f1": 0.703875968992248,
+        "precision": 0.5896103896103896,
+        "recall": 0.8730769230769231
+      },
+      "source_selected_threshold": 0.2,
+      "top_20_percent_recall": 0.2923076923076923,
+      "top_20_percent_reviewed_records": 90
+    },
+    {
+      "defect_prevalence": 0.5601023017902813,
+      "dummy_prior": {
+        "average_precision": 0.5601023017902813,
+        "confusion_matrix": {
+          "fn": 438,
+          "fp": 0,
+          "labels": [
+            0,
+            1
+          ],
+          "matrix": [
+            [
+              344,
+              0
+            ],
+            [
+              438,
+              0
+            ]
+          ],
+          "tn": 344,
+          "tp": 0
+        },
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0
+      },
+      "logistic_regression": {
+        "average_precision": 0.7274253401592768,
+        "confusion_matrix": {
+          "fn": 392,
+          "fp": 4,
+          "labels": [
+            0,
+            1
+          ],
+          "matrix": [
+            [
+              340,
+              4
+            ],
+            [
+              392,
+              46
+            ]
+          ],
+          "tn": 340,
+          "tp": 46
+        },
+        "f1": 0.1885245901639344,
+        "precision": 0.92,
+        "recall": 0.1050228310502283
+      },
+      "project": "lucene",
+      "records": 782,
+      "source_selected_flagged_percentage": 100.0,
+      "source_selected_flagged_records": 782,
+      "source_selected_metrics": {
+        "average_precision": 0.7274253401592768,
+        "confusion_matrix": {
+          "fn": 0,
+          "fp": 344,
+          "labels": [
+            0,
+            1
+          ],
+          "matrix": [
+            [
+              0,
+              344
+            ],
+            [
+              0,
+              438
+            ]
+          ],
+          "tn": 0,
+          "tp": 438
+        },
+        "f1": 0.7180327868852459,
+        "precision": 0.5601023017902813,
+        "recall": 1.0
+      },
+      "source_selected_threshold": 0.1,
+      "top_20_percent_recall": 0.2671232876712329,
+      "top_20_percent_reviewed_records": 157
+    },
+    {
+      "defect_prevalence": 0.5130624092888244,
+      "dummy_prior": {
+        "average_precision": 0.5130624092888244,
+        "confusion_matrix": {
+          "fn": 707,
+          "fp": 0,
+          "labels": [
+            0,
+            1
+          ],
+          "matrix": [
+            [
+              671,
+              0
+            ],
+            [
+              707,
+              0
+            ]
+          ],
+          "tn": 671,
+          "tp": 0
+        },
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0
+      },
+      "logistic_regression": {
+        "average_precision": 0.6688684642808391,
+        "confusion_matrix": {
+          "fn": 593,
+          "fp": 43,
+          "labels": [
+            0,
+            1
+          ],
+          "matrix": [
+            [
+              628,
+              43
+            ],
+            [
+              593,
+              114
+            ]
+          ],
+          "tn": 628,
+          "tp": 114
+        },
+        "f1": 0.2638888888888889,
+        "precision": 0.7261146496815286,
+        "recall": 0.16124469589816123
+      },
+      "project": "poi",
+      "records": 1378,
+      "source_selected_flagged_percentage": 100.0,
+      "source_selected_flagged_records": 1378,
+      "source_selected_metrics": {
+        "average_precision": 0.6688684642808391,
+        "confusion_matrix": {
+          "fn": 0,
+          "fp": 671,
+          "labels": [
+            0,
+            1
+          ],
+          "matrix": [
+            [
+              0,
+              671
+            ],
+            [
+              0,
+              707
+            ]
+          ],
+          "tn": 0,
+          "tp": 707
+        },
+        "f1": 0.6781774580335731,
+        "precision": 0.5130624092888244,
+        "recall": 1.0
+      },
+      "source_selected_threshold": 0.1,
+      "top_20_percent_recall": 0.28005657708628007,
+      "top_20_percent_reviewed_records": 276
+    },
+    {
+      "defect_prevalence": 0.2551181102362205,
+      "dummy_prior": {
+        "average_precision": 0.2551181102362205,
+        "confusion_matrix": {
+          "fn": 162,
+          "fp": 0,
+          "labels": [
+            0,
+            1
+          ],
+          "matrix": [
+            [
+              473,
+              0
+            ],
+            [
+              162,
+              0
+            ]
+          ],
+          "tn": 473,
+          "tp": 0
+        },
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0
+      },
+      "logistic_regression": {
+        "average_precision": 0.4514644012537602,
+        "confusion_matrix": {
+          "fn": 139,
+          "fp": 19,
+          "labels": [
+            0,
+            1
+          ],
+          "matrix": [
+            [
+              454,
+              19
+            ],
+            [
+              139,
+              23
+            ]
+          ],
+          "tn": 454,
+          "tp": 23
+        },
+        "f1": 0.22549019607843138,
+        "precision": 0.5476190476190477,
+        "recall": 0.1419753086419753
+      },
+      "project": "synapse",
+      "records": 635,
+      "source_selected_flagged_percentage": 100.0,
+      "source_selected_flagged_records": 635,
+      "source_selected_metrics": {
+        "average_precision": 0.4514644012537602,
+        "confusion_matrix": {
+          "fn": 0,
+          "fp": 473,
+          "labels": [
+            0,
+            1
+          ],
+          "matrix": [
+            [
+              0,
+              473
+            ],
+            [
+              0,
+              162
+            ]
+          ],
+          "tn": 0,
+          "tp": 162
+        },
+        "f1": 0.4065244667503137,
+        "precision": 0.2551181102362205,
+        "recall": 1.0
+      },
+      "source_selected_threshold": 0.05,
+      "top_20_percent_recall": 0.3950617283950617,
+      "top_20_percent_reviewed_records": 127
+    },
+    {
+      "defect_prevalence": 0.5743348982785602,
+      "dummy_prior": {
+        "average_precision": 0.5743348982785602,
+        "confusion_matrix": {
+          "fn": 367,
+          "fp": 0,
+          "labels": [
+            0,
+            1
+          ],
+          "matrix": [
+            [
+              272,
+              0
+            ],
+            [
+              367,
+              0
+            ]
+          ],
+          "tn": 272,
+          "tp": 0
+        },
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0
+      },
+      "logistic_regression": {
+        "average_precision": 0.6712316915510276,
+        "confusion_matrix": {
+          "fn": 336,
+          "fp": 11,
+          "labels": [
+            0,
+            1
+          ],
+          "matrix": [
+            [
+              261,
+              11
+            ],
+            [
+              336,
+              31
+            ]
+          ],
+          "tn": 261,
+          "tp": 31
+        },
+        "f1": 0.15158924205378974,
+        "precision": 0.7380952380952381,
+        "recall": 0.08446866485013624
+      },
+      "project": "velocity",
+      "records": 639,
+      "source_selected_flagged_percentage": 73.39593114241002,
+      "source_selected_flagged_records": 469,
+      "source_selected_metrics": {
+        "average_precision": 0.6712316915510276,
+        "confusion_matrix": {
+          "fn": 75,
+          "fp": 177,
+          "labels": [
+            0,
+            1
+          ],
+          "matrix": [
+            [
+              95,
+              177
+            ],
+            [
+              75,
+              292
+            ]
+          ],
+          "tn": 95,
+          "tp": 292
+        },
+        "f1": 0.6985645933014354,
+        "precision": 0.6226012793176973,
+        "recall": 0.7956403269754768
+      },
+      "source_selected_threshold": 0.2,
+      "top_20_percent_recall": 0.23705722070844687,
+      "top_20_percent_reviewed_records": 128
+    }
+  ],
+  "ranking_note": "Average precision and top-20% recall are ranking results. They are separate from fixed-threshold classification metrics.",
+  "report_type": "historical_cross_project_evaluation",
+  "schema_version": 1,
+  "source_artifacts": {
+    "lopo_sha256": "76023e5a1c4c222f2e80e634a52e2c8b72fae8f293a4182b31f72f1f66fd2406",
+    "source_validation_sha256": "82f41122f4b0a5b4d23617529acae49f19b730985e614485e69f8918aa9b9080"
+  },
+  "source_selected_thresholds_flagging_all_or_nearly_all": [
+    "camel",
+    "jedit",
+    "lucene",
+    "poi",
+    "synapse"
+  ],
+  "summary": {
+    "dummy_prior": {
+      "average_precision": {
+        "maximum": 0.579064587973274,
+        "mean": 0.40811313944946426,
+        "minimum": 0.1732418524871355,
+        "sample_standard_deviation": 0.18800632054076039
+      },
+      "confusion_matrix_totals": {
+        "fn": 2799,
+        "fp": 0,
+        "tn": 5617,
+        "tp": 0
+      },
+      "f1": {
+        "maximum": 0.0,
+        "mean": 0.0,
+        "minimum": 0.0,
+        "sample_standard_deviation": 0.0
+      },
+      "precision": {
+        "maximum": 0.0,
+        "mean": 0.0,
+        "minimum": 0.0,
+        "sample_standard_deviation": 0.0
+      },
+      "recall": {
+        "maximum": 0.0,
+        "mean": 0.0,
+        "minimum": 0.0,
+        "sample_standard_deviation": 0.0
+      }
+    },
+    "logistic_regression": {
+      "average_precision": {
+        "maximum": 0.7427479855947112,
+        "mean": 0.5541701254966209,
+        "minimum": 0.2680474102609265,
+        "sample_standard_deviation": 0.19441420076344457
+      },
+      "confusion_matrix_totals": {
+        "fn": 2248,
+        "fp": 838,
+        "tn": 4779,
+        "tp": 551
+      },
+      "f1": {
+        "maximum": 0.3824228028503563,
+        "mean": 0.23745470517282605,
+        "minimum": 0.15158924205378974,
+        "sample_standard_deviation": 0.0786484982040154
+      },
+      "precision": {
+        "maximum": 0.9259259259259259,
+        "mean": 0.6343272494984578,
+        "minimum": 0.28383458646616544,
+        "sample_standard_deviation": 0.2673448549234621
+      },
+      "recall": {
+        "maximum": 0.5313531353135313,
+        "mean": 0.1984145365613187,
+        "minimum": 0.08446866485013624,
+        "sample_standard_deviation": 0.1594342657896322
+      }
+    },
+    "source_selected_threshold": {
+      "f1": {
+        "maximum": 0.7180327868852459,
+        "mean": 0.5481012172565118,
+        "minimum": 0.29560975609756096,
+        "sample_standard_deviation": 0.19214442027381812
+      },
+      "precision": {
+        "maximum": 0.6226012793176973,
+        "mean": 0.41654321278664536,
+        "minimum": 0.17344018317115054,
+        "sample_standard_deviation": 0.19730687371575406
+      },
+      "recall": {
+        "maximum": 1.0,
+        "mean": 0.9526738928646286,
+        "minimum": 0.7956403269754768,
+        "sample_standard_deviation": 0.0838590290290703
+      }
+    },
+    "top_20_percent_recall": {
+      "maximum": 0.41254125412541254,
+      "mean": 0.3093266500471019,
+      "minimum": 0.23705722070844687,
+      "sample_standard_deviation": 0.0670182685452673
+    }
+  },
+  "target_label_usage": "final outer evaluation only",
+  "tuning": "none"
+}
