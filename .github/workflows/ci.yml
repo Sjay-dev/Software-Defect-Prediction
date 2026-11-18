@@ -6,14 +6,14 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
           cache: pip
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '24'
           cache: npm
@@ -37,6 +37,11 @@ jobs:
           .venv/bin/python -m defect_prediction.download
           .venv/bin/python -m defect_prediction.experiment
           .venv/bin/python -m defect_prediction.deployment
+      - name: Configure the CI-generated model
+        run: |
+          ci_service_config="$RUNNER_TEMP/software-defect-prediction-service.json"
+          .venv/bin/python -m defect_prediction.ci_config --output "$ci_service_config"
+          echo "SDP_SERVICE_CONFIG=$ci_service_config" >> "$GITHUB_ENV"
       - name: Launcher tests
         run: npm run test:launcher
       - name: Frontend tests

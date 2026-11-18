@@ -46,6 +46,35 @@ npm run doctor
 
 The download command verifies every manifest checksum. Deployment packaging copies the evaluated logistic pipeline byte-for-byte, verifies its SHA-256 checksum and schema, and refuses to replace a different artifact. It does not retrain the model.
 
+`config/service.json` is the release configuration. Its
+`4d70c015584d9bcc5a781b6d712f6db5f08784838b00de37eb0124fef3d3f40d`
+checksum protects the released model bytes produced in the pinned Windows
+environment; it is not rewritten when another platform reconstructs the
+experiment. Joblib/pickle files are binary artifacts, and separately fitted
+models are not assumed to serialize byte-for-byte identically across operating
+systems even with the same Python package versions.
+
+Ordinary CI intentionally reconstructs the baseline on Linux. After deployment
+packaging has copied the generated model and recorded its checksum, CI runs
+`python -m defect_prediction.ci_config` to create an untracked service config in
+the runner's temporary directory. That command independently hashes the model,
+requires the actual and manifest checksums to agree, preserves the release model
+version and report paths, and pins only the temporary config to those generated
+bytes. `SDP_SERVICE_CONFIG` makes the launcher, its preflight subprocess, and
+Uvicorn use that same config. This separates artifact integrity (exact bytes must
+match their own trusted config and manifest) from experiment reproducibility
+(predictions and research metrics), and leaves the release checksum unchanged.
+
+On a non-Windows machine that deliberately reconstructs rather than obtains the
+exact release artifact, use the same isolated-config flow before running the
+launcher:
+
+```bash
+./.venv/bin/python -m defect_prediction.ci_config --output artifacts/service.generated.json
+SDP_SERVICE_CONFIG=artifacts/service.generated.json npm run doctor
+SDP_SERVICE_CONFIG=artifacts/service.generated.json npm run dev
+```
+
 Start both local services:
 
 ```powershell
@@ -139,7 +168,11 @@ npm run doctor
 
 Backend tests cover project isolation, training-only preprocessing, feature exclusion, metric and tie calculations, model/result association, source-selection validity, checksums, API validation, and direct-pipeline/API agreement. Frontend tests cover all import formats, mapping and invalid-row handling, batching, retry/cancellation, global ranking, stable exports, footer links, and the values rendered from tracked experiment summaries.
 
-CI runs the tests and production build in a fresh environment and reproduces the checksum-verified served model. The separate manual workflow executes the complete research reproduction.
+CI runs the tests and production build on the explicitly pinned `ubuntu-24.04`
+image and reconstructs a checksum-verified CI model without changing the release
+configuration. GitHub Action runtime versions are independent of the Node.js 24
+version used by this application. The separate manual workflow executes the
+complete research reproduction.
 
 ## Known limitations
 

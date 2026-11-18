@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { spawn, spawnSync } from 'node:child_process'
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { appendFile, copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import net from 'node:net'
 import os from 'node:os'
 import path from 'node:path'
@@ -10,6 +10,15 @@ import { fileURLToPath } from 'node:url'
 import { parseWindowsNetstat, paths } from './dev-core.mjs'
 
 const launcher = fileURLToPath(new URL('./dev.mjs', import.meta.url))
+
+function activeServiceConfigPath() {
+  const configured = process.env.SDP_SERVICE_CONFIG || 'config/service.json'
+  return path.isAbsolute(configured) ? path.normalize(configured) : path.resolve(paths.root, configured)
+}
+
+function diagnostics(result) {
+  return `Launcher exited with code ${result.code} and signal ${result.signal ?? 'none'}.\nSTDOUT:\n${result.stdout}\nSTDERR:\n${result.stderr}`
+}
 
 async function freePorts(count) {
   const servers = []
@@ -70,13 +79,18 @@ async function runLauncher(args, overrides = {}, timeoutMs = 90000) {
   })
 }
 
-async function assertPortAvailable(port) {
+async function assertPortAvailable(port, launcherDiagnostics = '') {
   const server = net.createServer()
-  await new Promise((resolve, reject) => {
-    server.once('error', reject)
-    server.listen({ host: '127.0.0.1', port }, resolve)
-  })
-  await new Promise((resolve) => server.close(resolve))
+  try {
+    await new Promise((resolve, reject) => {
+      server.once('error', reject)
+      server.listen({ host: '127.0.0.1', port }, resolve)
+    })
+    await new Promise((resolve) => server.close(resolve))
+  } catch (error) {
+    error.message = `${error.message}\n${launcherDiagnostics}`
+    throw error
+  }
 }
 
 test('Windows netstat parsing returns the listening PID', () => {
@@ -89,10 +103,10 @@ test('occupied backend and frontend ports fail before starting services', { time
   const backendOccupant = await occupyPort()
   try {
     const result = await runLauncher(['--backend-only'], { SDP_BACKEND_PORT: String(backendOccupant.port) })
-    assert.notEqual(result.code, 0)
-    assert.match(result.output, new RegExp(`Port ${backendOccupant.port} is already in use`))
-    assert.match(result.output, /Startup cancelled/)
-    if (process.platform === 'win32') assert.match(result.output, /PID \d+/)
+    assert.notEqual(result.code, 0, diagnostics(result))
+    assert.match(result.output, new RegExp(`Port ${backendOccupant.port} is already in use`), diagnostics(result))
+    assert.match(result.output, /Startup cancelled/, diagnostics(result))
+    if (process.platform === 'win32') assert.match(result.output, /PID \d+/, diagnostics(result))
   } finally {
     await new Promise((resolve) => backendOccupant.server.close(resolve))
   }
@@ -100,10 +114,10 @@ test('occupied backend and frontend ports fail before starting services', { time
   const frontendOccupant = await occupyPort()
   try {
     const result = await runLauncher(['--frontend-only'], { SDP_FRONTEND_PORT: String(frontendOccupant.port) })
-    assert.notEqual(result.code, 0)
-    assert.match(result.output, new RegExp(`Port ${frontendOccupant.port} is already in use`))
-    assert.match(result.output, /Startup cancelled/)
-    if (process.platform === 'win32') assert.match(result.output, /PID \d+/)
+    assert.notEqual(result.code, 0, diagnostics(result))
+    assert.match(result.output, new RegExp(`Port ${frontendOccupant.port} is already in use`), diagnostics(result))
+    assert.match(result.output, /Startup cancelled/, diagnostics(result))
+    if (process.platform === 'win32') assert.match(result.output, /PID \d+/, diagnostics(result))
   } finally {
     await new Promise((resolve) => frontendOccupant.server.close(resolve))
   }
@@ -117,15 +131,15 @@ test('doctor gives an actionable missing-configuration error', { timeout: 60000 
     SDP_BACKEND_PORT: String(backendPort),
     SDP_FRONTEND_PORT: String(frontendPort),
   })
-  assert.notEqual(result.code, 0)
-  assert.match(result.output, /Backend configuration: Missing/)
-  assert.match(result.output, /Restore config\/service.json or set SDP_SERVICE_CONFIG/)
+  assert.notEqual(result.code, 0, diagnostics(result))
+  assert.match(result.output, /Backend configuration: Missing/, diagnostics(result))
+  assert.match(result.output, /Restore config\/service.json or set SDP_SERVICE_CONFIG/, diagnostics(result))
 })
 
 test('missing historical reports are warnings and do not block predictions', { timeout: 120000 }, async () => {
   const temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), 'defect-launcher-'))
   try {
-    const originalPath = path.join(paths.root, 'config', 'service.json')
+    const originalPath = activeServiceConfigPath()
     const config = JSON.parse(await readFile(originalPath, 'utf8'))
     config.model_manifest = path.resolve(path.dirname(originalPath), config.model_manifest)
     config.historical_reports = {
@@ -141,25 +155,67 @@ test('missing historical reports are warnings and do not block predictions', { t
       SDP_BACKEND_PORT: String(backendPort),
       SDP_FRONTEND_PORT: String(frontendPort),
     })
-    assert.equal(result.code, 0)
-    assert.match(result.output, /Predictions can run; this experiment section will be unavailable/)
-    assert.match(result.output, /passed with 3 warning/)
+    assert.equal(result.code, 0, diagnostics(result))
+    assert.match(result.output, /Predictions can run; this experiment section will be unavailable/, diagnostics(result))
+    assert.match(result.output, /passed with 3 warning/, diagnostics(result))
   } finally {
     await rm(temporaryDirectory, { recursive: true, force: true })
   }
 })
 
-test('backend startup failures surface the Uvicorn error and free the port', { timeout: 120000 }, async () => {
+test('invalid ASGI modules reach Uvicorn, surface its error, and free the port', { timeout: 120000 }, async () => {
   const [backendPort] = await freePorts(1)
   const result = await runLauncher(['--backend-only'], {
     SDP_BACKEND_PORT: String(backendPort),
     SDP_BACKEND_MODULE: 'defect_prediction.module_that_does_not_exist:app',
     SDP_READINESS_TIMEOUT_MS: '5000',
   })
-  assert.notEqual(result.code, 0)
-  assert.match(result.output, /Could not import module|No module named|Error loading ASGI app/)
-  assert.match(result.output, /exited before startup completed/)
-  await assertPortAvailable(backendPort)
+  assert.notEqual(result.code, 0, diagnostics(result))
+  assert.match(result.output, /Could not import module|No module named|Error loading ASGI app/, diagnostics(result))
+  assert.match(result.output, /exited before startup completed/, diagnostics(result))
+  await assertPortAvailable(backendPort, diagnostics(result))
+})
+
+test('checksum corruption is rejected before startup', { timeout: 120000 }, async () => {
+  const temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), 'defect-corrupt-model-'))
+  try {
+    const sourceConfigPath = activeServiceConfigPath()
+    const config = JSON.parse(await readFile(sourceConfigPath, 'utf8'))
+    const sourceManifestPath = path.resolve(path.dirname(sourceConfigPath), config.model_manifest)
+    const manifest = JSON.parse(await readFile(sourceManifestPath, 'utf8'))
+    const deploymentDirectory = path.join(temporaryDirectory, 'deployment')
+    const manifestPath = path.join(deploymentDirectory, 'model_manifest.json')
+    const modelPath = path.join(deploymentDirectory, 'pipeline.joblib')
+    const schemaPath = path.join(deploymentDirectory, 'feature_schema.json')
+    await mkdir(deploymentDirectory)
+    await copyFile(path.resolve(path.dirname(sourceManifestPath), manifest.model_file), modelPath)
+    await copyFile(path.resolve(path.dirname(sourceManifestPath), manifest.feature_schema_file), schemaPath)
+    manifest.model_file = path.basename(modelPath)
+    manifest.feature_schema_file = path.basename(schemaPath)
+    await writeFile(manifestPath, JSON.stringify(manifest), 'utf8')
+    await appendFile(modelPath, 'corrupt')
+
+    config.model_manifest = manifestPath
+    config.historical_reports = Object.fromEntries(
+      Object.entries(config.historical_reports || {}).map(([name, configured]) => [
+        name,
+        path.resolve(path.dirname(sourceConfigPath), configured),
+      ]),
+    )
+    const configPath = path.join(temporaryDirectory, 'service.json')
+    await writeFile(configPath, JSON.stringify(config), 'utf8')
+    const [backendPort, frontendPort] = await freePorts(2)
+    const result = await runLauncher(['--doctor'], {
+      SDP_SERVICE_CONFIG: configPath,
+      SDP_BACKEND_PORT: String(backendPort),
+      SDP_FRONTEND_PORT: String(frontendPort),
+    })
+
+    assert.notEqual(result.code, 0, diagnostics(result))
+    assert.match(result.output, /Model artifact checksum verification failed/, diagnostics(result))
+  } finally {
+    await rm(temporaryDirectory, { recursive: true, force: true })
+  }
 })
 
 test('combined startup shuts down cleanly and can restart on the same ports', { timeout: 180000 }, async () => {
@@ -171,11 +227,11 @@ test('combined startup shuts down cleanly and can restart on the same ports', { 
   }
   for (let attempt = 0; attempt < 2; attempt += 1) {
     const result = await runLauncher([], environment, 90000)
-    assert.equal(result.code, 0, result.output)
-    assert.match(result.output, /Backend ready/)
-    assert.match(result.output, /Frontend ready/)
-    assert.match(result.output, /Managed services stopped/)
-    await assertPortAvailable(backendPort)
-    await assertPortAvailable(frontendPort)
+    assert.equal(result.code, 0, diagnostics(result))
+    assert.match(result.output, /Backend ready/, diagnostics(result))
+    assert.match(result.output, /Frontend ready/, diagnostics(result))
+    assert.match(result.output, /Managed services stopped/, diagnostics(result))
+    await assertPortAvailable(backendPort, diagnostics(result))
+    await assertPortAvailable(frontendPort, diagnostics(result))
   }
 })
