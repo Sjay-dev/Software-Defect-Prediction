@@ -44,7 +44,11 @@ Compact research summaries are tracked, so the Experiments page does not require
 npm run doctor
 ```
 
-The download command verifies every manifest checksum. Deployment packaging copies the evaluated logistic pipeline byte-for-byte, verifies its SHA-256 checksum and schema, and refuses to replace a different artifact. It does not retrain the model.
+The download command uses bounded retries for transient HTTP and connection
+failures, and verifies every manifest checksum before accepting a file.
+Deployment packaging copies the evaluated logistic pipeline byte-for-byte,
+verifies its SHA-256 checksum and schema, and refuses to replace a different
+artifact. It does not retrain the model.
 
 `config/service.json` is the release configuration. Its
 `4d70c015584d9bcc5a781b6d712f6db5f08784838b00de37eb0124fef3d3f40d`
